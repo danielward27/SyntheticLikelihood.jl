@@ -1,5 +1,8 @@
 module SyntheticLikelihood
 
-# Write your package code here.
+
+function test_func()
+    return true
+end
 
 end
