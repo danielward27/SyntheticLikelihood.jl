@@ -6,6 +6,8 @@ or an array of parameter vectors. If a vector is used, `n_sim` is specified as
 the number of simulations. If an array is used, one simulation is carried out
 using each row as a parameter vector.
 
+$(SIGNATURES)
+
 # Arguments
 - `θ::Vector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
@@ -13,7 +15,6 @@ using each row as a parameter vector.
 - `n_sim::Int` Number of simulations.
 - `simulator_kwargs` Kwargs passed to simulator.
 - `summary_kwargs` Kwargs passed to summary.
-
 """
 function simulate_n_s(
     θ::Vector{Float64};
@@ -41,15 +42,10 @@ end
 
 
 """
-Simulates summary statistics from a matrix of parameter vectors.
+As for above, but uses a matrix of parameter values, carrying out one simulation
+    from each row of θ.
 
-# Arguments
-- `θ::Array{Float64, 2}` Array of parameters. Each row is passed to simulator.
-- `simulator::Function` Simulator function.
-- `summary::Function` Summary function that takes output of simulator.
-- `simulator_kwargs` Kwargs passed to simulator.
-- `summary_kwargs` Kwargs passed to summary.
-
+    $(SIGNATURES)
 """
 function simulate_n_s(
     θ::Array{Float64, 2};

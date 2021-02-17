@@ -4,6 +4,8 @@
 Evaluates synthetic likelhood of observed data for a fixed parameter vector
     using a multivariate Gaussian assumption as in (Simon Wood, 2010).
 
+    $(SIGNATURES)
+
 # Arguments
 - `θ::Vector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
