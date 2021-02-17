@@ -2,7 +2,7 @@ module SyntheticLikelihood
 
 using Distributions
 
-MvNormal
+include("utils.jl")
 
 
 function test_func()
