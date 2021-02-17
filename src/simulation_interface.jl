@@ -1,7 +1,10 @@
 # Contains general functoins for the simulation interface
 
 """
-Simulates summary statistics from the model under a fixed parameter vector.
+Simulates summary statistics from the model under a fixed parameter vector,
+or an array of parameter vectors. If a vector is used, `n_sim` is specified as
+the number of simulations. If an array is used, one simulation is carried out
+using each row as a parameter vector.
 
 # Arguments
 - `θ::Vector` Parameter vector passed to simulator.
