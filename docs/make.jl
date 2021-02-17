@@ -20,5 +20,5 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/danielward27/SyntheticLikelihood.jl",
-    devbranch = "main,
+    devbranch = "main",
 )
