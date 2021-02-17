@@ -3,6 +3,9 @@ uuid = "dd14a069-f616-42ae-bdb8-5921107d30e5"
 authors = ["Daniel Ward"]
 version = "0.1.0"
 
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+
 [compat]
 julia = "1"
 

@@ -2,6 +2,9 @@ module SyntheticLikelihood
 
 using Distributions
 
+MvNormal
+
+
 function test_func()
     return true
 end
@@ -117,5 +120,6 @@ function sim_sum(θ::Vector, simulator::Function,
     end
     return m
 end
+
 
 end
