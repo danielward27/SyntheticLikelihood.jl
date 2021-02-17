@@ -1,6 +1,5 @@
-using SyntheticLikelihood
-using Test
+using SyntheticLikelihood, Test, SafeTestsets
 
-@testset "SyntheticLikelihood.jl" begin
-    @test true
+@time begin
+    @time @safetestset "Simulation interface" begin include("simulation_interface_test.jl") end
 end
