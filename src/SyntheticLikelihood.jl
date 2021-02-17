@@ -1,6 +1,7 @@
 module SyntheticLikelihood
 
 using Distributions
+using DocStringExtensions
 
 include("utils.jl")
 include("simulation_interface.jl")
