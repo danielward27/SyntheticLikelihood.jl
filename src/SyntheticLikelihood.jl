@@ -4,10 +4,15 @@ using Distributions
 
 include("utils.jl")
 include("simulation_interface.jl")
-include("algorithms.jl")
+include("likelihood.jl")
+include("mcmc.jl")
 
-# Exports
-export synthetic_likelihood
+# simulation interface
 export simulate_n_s
+
+# likelihood
+export synthetic_likelihood
+
+# mcmc
 
 end
