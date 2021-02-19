@@ -3,7 +3,7 @@
 # Create noisy gaussian
 
 # Toy example, noisy normal logpdf with means 1 and covariance 1
-function noisy_normal_logpdf(θ::AbstractVector; μ::::AbstractVector = [1,2,3])
+function noisy_normal_logpdf(θ::AbstractVector; μ::AbstractVector = [1,2,3])
     d = MvNormal(μ, 1)
     logpdf(d, θ) + rand()
 end
