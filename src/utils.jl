@@ -1,6 +1,4 @@
 # utility functions
-
-
 """
 Peturb parameter vector with multivariate normal. Returns matrix
 of size [n, length(θ)].
@@ -28,16 +26,15 @@ function pairwise_combinations(n::Int)
     combinations = Matrix{Int64}(undef, n_combinations, 2)
     row = 1
     for i in 1:n
-        for j in 1:n
-            if i <= j
-                combinations[row, :] = [i, j]
-                row += 1
-            end
+        j = 1
+        while j <= i
+            combinations[row, :] = [j, i]
+            row += 1
+            j +=1
         end
     end
     combinations
 end
-
 
 
 ## For testing:
