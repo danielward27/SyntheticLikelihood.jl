@@ -22,3 +22,8 @@ sample_cov = cov(peturbed)
 
 @test isapprox(true_mean, sample_mean; atol = 3)
 @test isapprox(diagm(true_cov), sample_cov; atol = 20)
+
+## Test pairwise combinations
+pc = SyntheticLikelihood.pairwise_combinations
+@test pc(1) == [1 1]
+@test pc(3) == [1 1; 1 2; 1 3; 2 2; 2 3; 3 3]
