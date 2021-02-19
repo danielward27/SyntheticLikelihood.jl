@@ -3,12 +3,14 @@
 # Create noisy gaussian
 
 # Toy example, noisy normal logpdf with means 1 and covariance 1
-function noisy_normal_logpdf(θ::Vector{Float64}; μ::Vector = [1,2,3])
+function noisy_normal_logpdf(θ::AbstractVector; μ::::AbstractVector = [1,2,3])
     d = MvNormal(μ, 1)
     logpdf(d, θ) + rand()
 end
 
 θ_mle = [1,2,3]
+
+θ_peturbed = peturb(θ_mle, [1.,1,1])
 
 # θ_peturbed = peturb(θ_mle, I)
 

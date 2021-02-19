@@ -7,19 +7,19 @@ Evaluates synthetic likelhood of observed data for a fixed parameter vector
     $(SIGNATURES)
 
 # Arguments
-- `θ::Vector` Parameter vector passed to simulator.
+- `θ::AbstractVector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
 - `summary::Function` Summary function that takes output of simulator.
-- `s_true::Vector` Observed summary statistics.
+- `s_true::AbstractVector` Observed summary statistics.
 - `n_sim::Int` Number of simulations to use.
 - `simulator_kwargs` Kwargs splatted in simulator.
 - `summary_kwargs` Kwargs splatted in summary.
 """
 function synthetic_likelihood(
-    θ::Vector;
+    θ::AbstractVector;
     simulator::Function,
     summary::Function,
-    s_true::Vector,
+    s_true::AbstractVector,
     n_sim::Int,
     simulator_kwargs = NamedTuple(),
     summary_kwargs = NamedTuple(),

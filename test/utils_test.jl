@@ -1,7 +1,7 @@
 using SyntheticLikelihood, Test, Statistics, LinearAlgebra
 
 ## Test peturb
-true_mean = [1,1000]
+true_mean = [1.,1000]
 true_cov = [50 10; 10 50]
 peturbed = peturb(true_mean, true_cov, 1000)
 

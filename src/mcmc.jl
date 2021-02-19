@@ -5,7 +5,7 @@
 
 
 @with_kw mutable struct MCMC
-    θ::Vector
+    θ::AbstractVector
     objective::Function
     propose::Function
     counter::Int

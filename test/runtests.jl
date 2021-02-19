@@ -6,5 +6,4 @@ using SyntheticLikelihood, Test, SafeTestsets
     @time @safetestset "MCMC" begin include("mcmc_test.jl") end
     @time @safetestset "Local regression" begin include("local_regression_test.jl") end
     @time @safetestset "Utils" begin include("utils_test.jl") end
-
 end

@@ -2,7 +2,7 @@
 
 
 """
-Peturb parameter vector with multivariate normal. Returns array
+Peturb parameter vector with multivariate normal. Returns matrix
 of size [n, length(θ)].
 """
 function peturb(θ::AbstractVector, Σ::AbstractMatrix, n::Int = 1)

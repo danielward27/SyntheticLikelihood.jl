@@ -2,8 +2,8 @@
 
 """
 Simulates summary statistics from the model under a fixed parameter vector,
-or an array of parameter vectors. If a vector is used, `n_sim` is specified as
-the number of simulations. If an array is used, one simulation is carried out
+or a matrix of parameter vectors. If a vector is used, `n_sim` is specified as
+the number of simulations. If a matrix is used, one simulation is carried out
 using each row as a parameter vector. By defualt simulations are run on multiple
 threads (see Threads manual for information on starting Julia with multiple
 threads).
@@ -11,7 +11,7 @@ threads).
 $(SIGNATURES)
 
 # Arguments
-- `θ::Vector` Parameter vector passed to simulator.
+- `θ::AbstractVector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
 - `summary::Function` Summary function that takes output of simulator.
 - `n_sim::Int` Number of simulations.
@@ -20,7 +20,7 @@ $(SIGNATURES)
 - `parallel::Bool = true` Wheter to run on multiple threads.
 """
 function simulate_n_s(
-    θ::Vector{Float64};
+    θ::AbstractVector;
     simulator::Function,
     summary::Function,
     n_sim::Int,
@@ -63,7 +63,7 @@ As for above, but uses an Array of parameter values are used, carrying out one
     $(SIGNATURES)
 """
 function simulate_n_s(
-    θ::Array{Float64, 2};
+    θ::AbstractMatrix;
     simulator::Function,
     summary::Function,
     simulator_kwargs = Dict(),
