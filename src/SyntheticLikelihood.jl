@@ -4,6 +4,8 @@ using Distributions
 using DocStringExtensions
 using Parameters
 using LinearAlgebra
+using Statistics
+
 
 include("simulation_interface.jl")
 include("likelihood.jl")
