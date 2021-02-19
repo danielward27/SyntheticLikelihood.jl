@@ -26,4 +26,4 @@ sample_cov = cov(peturbed)
 ## Test pairwise combinations
 pc = SyntheticLikelihood.pairwise_combinations
 @test pc(1) == [1 1]
-@test pc(3) == [1 1; 1 2; 1 3; 2 2; 2 3; 3 3]
+@test pc(3) == [1 1; 1 2; 2 2; 1 3; 2 3; 3 3]
