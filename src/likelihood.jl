@@ -34,3 +34,18 @@ function synthetic_likelihood(
 
     return logpdf(mvn, s_true)
 end
+
+
+
+
+
+
+"""
+Caculates the gradient of the the synthetic likelihood using a local regression
+approach.
+
+$(SIGNATURES)
+"""
+function local_gradient(P, simulator, summary)
+    error("Not implemented")
+end
