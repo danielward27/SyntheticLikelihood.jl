@@ -2,7 +2,6 @@ using SyntheticLikelihood, Test
 
 simulator = SyntheticLikelihood.test_simulator
 summary = SyntheticLikelihood.test_summary
-
 θ_vec = [1.0, 2, 3, 4, 5]
 n_sim = 10
 
