@@ -20,7 +20,9 @@ function peturb(θ::AbstractVector, Σ::AbstractVector, n::Int = 1)
 end
 
 
-# Pairwise combinations (for polynomial regression)
+"""
+Pairwise combinations (for quadratic regression)
+"""
 function pairwise_combinations(n::Int)
     n_combinations = binomial(n, 2) + n
     combinations = Matrix{Int64}(undef, n_combinations, 2)

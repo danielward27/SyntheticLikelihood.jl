@@ -20,9 +20,13 @@ export simulate_n_s
 # likelihood
 export synthetic_likelihood
 
+# local regression
+export quadratic_transform
+
 # mcmc
 
 # utils
 export peturb
+export pairwise_combinations
 
 end
