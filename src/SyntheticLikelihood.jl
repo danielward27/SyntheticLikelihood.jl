@@ -2,7 +2,6 @@ module SyntheticLikelihood
 
 using Distributions
 using DocStringExtensions
-using Parameters
 using LinearAlgebra
 using Statistics
 

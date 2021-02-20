@@ -72,5 +72,4 @@ s = noisy_normal_logpdf.(eachrow(θ))
 β, ŷ = linear_regression(θ, s)
 μ = Localμ(β, combinations)
 
-
 # Use this knowledge? https://stats.stackexchange.com/questions/68080/basic-question-about-fisher-information-matrix-and-relationship-to-hessian-and-s?rq=1
