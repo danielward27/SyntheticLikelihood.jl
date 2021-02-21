@@ -37,8 +37,8 @@ function simulate_n_s(
     results[1, :] = s
 
     function fill_results!(i)
-        x = simulator(θ, simulator_kwargs...)
-        s = summary(x, summary_kwargs...)
+        x = simulator(θ; simulator_kwargs...)
+        s = summary(x; summary_kwargs...)
         results[i, :] = s
     end
 
@@ -79,8 +79,8 @@ function simulate_n_s(
     results[1, :] = s
 
     function fill_results!(i)
-        x = simulator(θ[i, :], simulator_kwargs...)
-        s = summary(x, summary_kwargs...)
+        x = simulator(θ[i, :]; simulator_kwargs...)
+        s = summary(x; summary_kwargs...)
         results[i, :] = s
     end
 

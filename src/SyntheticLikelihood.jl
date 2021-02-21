@@ -21,6 +21,7 @@ export synthetic_likelihood
 
 # local regression
 export quadratic_transform
+export linear_regression
 
 # mcmc
 
