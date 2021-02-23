@@ -19,14 +19,16 @@ function quadratic_transform(X::AbstractMatrix)
 end
 
 
+
+
 """
 Carry out linear regression. X should have a bias column.
 Returns tuple (β, ŷ).
 
 $(SIGNATURES)
 """
-function linear_regression(X::AbstractMatrix, s::AbstractVector)
-    β = X \ s  # Linear regression
+function linear_regression(X::AbstractMatrix, y::AbstractVector)
+    β = X \ y  # Linear regression
     ŷ = X * β
     (β = β, ŷ = ŷ)
 end
