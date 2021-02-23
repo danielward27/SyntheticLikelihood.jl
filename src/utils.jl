@@ -1,27 +1,26 @@
 # utility functions
+
 """
-Peturb parameter vector with multivariate normal. Returns matrix
-of size [n, length(θ)].
+Peturb a vector using a user specified distribution (often MVN zero mean).
+Returns array of size (n, length(θ))
+
+$(SIGNATURES)
+
+# Arguments
+- `θ::AbstractVector` Parameter to peturb.
+- `d::Sampleable` Distribution from which to sample (see Distributions.jl).
+-  `n::Int = 1` Number of peturbed vectors to return.
 """
-function peturb(θ::AbstractVector, Σ::AbstractMatrix, n::Int = 1)
-    @assert length(θ) == size(Σ)[2]
-    d = MvNormal(θ, Σ)
-    rand(d, n)'
+function peturb(θ::AbstractVector, d::Sampleable, n::Int = 1)
+    (rand(d, n) .+ θ)'
 end
 
-
 """
-Same as above but uses diagonal covariance specified with vector
-"""
-function peturb(θ::AbstractVector, Σ::AbstractVector, n::Int = 1)
-    @assert length(θ) == length(Σ)
-    d = MvNormal(θ, sqrt.(Σ))
-    rand(d, n)'
-end
+Pairwise combinations (for quadratic regression). `n=5` would return all the
+pairwise combinations between 1:5 (including matched terms e.g. [1,1]).
 
+$(SIGNATURES)
 
-"""
-Pairwise combinations (for quadratic regression)
 """
 function pairwise_combinations(n::Int)
     n_combinations = binomial(n, 2) + n
@@ -41,16 +40,8 @@ end
 
 ## For testing:
 
-# Simulates from MVN normal to act as a simple test example.
-function test_simulator(θ::AbstractVector; var = nothing)
-    if isnothing(var)
-        var = ones(length(θ))
-    end
-    d = MvNormal(θ, var)  # Diagonal covariance
-    rand(d)
-end
-
-# Passes the x values straight through.
-function test_summary(x::AbstractVector)
-    return x
+# Deterministic simulator for testing
+function deterministic_test_simulator(θ::AbstractVector{Float64})
+    @assert length(θ) == 2
+    [θ[1], θ[1]*θ[2], θ[2]^2]
 end

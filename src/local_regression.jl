@@ -1,80 +1,85 @@
-# Create noisy gaussian
-
-# Toy example, noisy normal logpdf with means 1 and covariance 1
-# Density plays role of summary statistic for local regression
-# Provides simple sanity check between hessian and covariance matrix.
-function noisy_normal_logpdf(θ::AbstractVector; μ::AbstractVector = [1,2,3])
-    d = MvNormal(μ, 1)
-    logpdf(d, θ) + rand()
-end
-
 
 """
-Quadratic transform. Returns Matrix. Bias term should be added prior to use.
-Returns a tuple, with the matrix, and the indices multiplied.
+Quadratic transform. Bias term appended as first column internally.
+Returns a tuple, with the matrix and the corresponding indices multiplied,
+that give rise to each column. Note, indices [1, 1] corresponds to the bias
+term (so indices compared to original matrix is shifted).
 A bit naive so could be sped up but neat.
+
+$(SIGNATURES)
 """
 function quadratic_transform(X::AbstractMatrix)
+    X = hcat(ones(size(X)[1]), X)  # Bias
     combinations = pairwise_combinations(size(X)[2])
     result = Matrix{Float64}(undef, size(X)[1], size(combinations)[1])
-
     for (i, idxs) in enumerate(eachrow(combinations))
         result[:, i] = X[:, idxs[1]] .* X[:, idxs[2]]
     end
     result, combinations
 end
 
-"""
-Carry out quadratic regression. X should have a bias column.
-Returns beta in a symetric matrix, where indices correspond to
-combinations of variables (e.g. [1,1] would be intercept, [2:end, :]
-is linear terms, the rest are quadratic terms).
-"""
-# TODO: Add test for quadratic regression (e.g. use deterministic case)
 
-function quadratic_regression(X::AbstractMatrix, s::AbstractVector)
-    n_features = size(X)[2]
-    X, combinations = quadratic_transform(X)
+"""
+Carry out linear regression. X should have a bias column.
+Returns tuple (β, ŷ).
+
+$(SIGNATURES)
+"""
+function linear_regression(X::AbstractMatrix, s::AbstractVector)
     β = X \ s  # Linear regression
-
-    β_mat = Matrix{Float64}(undef, n_features, n_features)
-
-    for (i, row) in enumerate(eachrow(combinations))
-        β_mat[row[1], row[2]] = β[i]
-    end
-
-    Symmetric(β_mat)
+    ŷ = X * β
+    (β = β, ŷ = ŷ)
 end
 
 
-θ_mle = [1,2,3]
-θ = peturb(θ_mle, [0.5, 0.5, 0.5], 100)
-s = noisy_normal_logpdf.(eachrow(θ))
-
-# Now have θ and s. Regress θ on s:
-θ = θ .- θ_mle'  # Demean
-θ = hcat(ones(size(θ)[1]), θ)
-quadratic_regression(θ, s)
-
-
-
+"""
+Struct that contains the information from the first local regression.
+"""
 struct Localμ
     μ::Float64
-    ∂μ::Vector{Float64}
-    ∂μ²::Symmetric{Float64}
+    ∂::Vector{Float64}
+    ∂²::Matrix{Float64}
+    ϵ::Vector{Float64}
 end
 
-# outer constructor?
+"""
+Gets the local behaviour of μ. Returns Localμ struct, containing the first and
+second derivitive estimates as well as the regression residuals.
 
+$(SIGNATURES)
 
+# Arguments
+- `θ_orig::AbstractVector` Original θ.
+- `θ::AbstractMatrix` Peturbed θ (sampled from local area).
+- `s::AbstractMatrix` Corresponding summary statistics to θ.
+"""
+function get_local_μ(;
+    θ_orig::AbstractVector,
+    θ::AbstractArray,
+    s::AbstractArray)
+    @assert size(θ)[1] == size(s)[1]
 
-function get_∂μ(β)
-    error("unimplemented")
+    # Center and carry out quadratic regression for each s
+    θ = θ .- θ_orig'
+    θ, combinations = quadratic_transform(θ)
+
+    d = size(s)[2]
+    μ = Vector{Localμ}(undef, d)
+
+    for i in 1:d
+       β, ŝ = linear_regression(θ, s[:, i])
+
+       # Convert β to matrix
+       n_features = floor(Int, 1/2 * (sqrt(8*length(β)+1) -1) + 0.1)
+       β_mat = Matrix{Float64}(undef, n_features, n_features)
+
+       for (i, row) in enumerate(eachrow(combinations))
+           β_mat[row[1], row[2]] = β[i]  # Upper traingular
+       end
+
+       β_mat = Symmetric(β_mat)
+       μ[i] = Localμ(β_mat[1,1], β_mat[2:end, 1],
+                     β_mat[2:end, 2:end], ŝ-s[:, 1])
+    end
+    μ
 end
-
-function get_∂²μ(β, combinations)
-    error("unimpimented")
-end
-
-
-# Use this knowledge? https://stats.stackexchange.com/questions/68080/basic-question-about-fisher-information-matrix-and-relationship-to-hessian-and-s?rq=1
