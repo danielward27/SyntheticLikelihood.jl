@@ -22,6 +22,7 @@ export synthetic_likelihood
 # local regression
 export quadratic_transform
 export linear_regression
+export get_local_μ
 
 # mcmc
 
