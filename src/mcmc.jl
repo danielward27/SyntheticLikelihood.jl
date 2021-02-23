@@ -12,9 +12,6 @@ mutable struct MCMC
 end
 
 
-
-
-
 # One step?
 function step(MCMC)
     error("Not implemented")
