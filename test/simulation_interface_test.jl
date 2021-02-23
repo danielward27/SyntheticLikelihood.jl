@@ -1,15 +1,14 @@
-using SyntheticLikelihood, Test
+using SyntheticLikelihood, Test, Distributions
 
-simulator = SyntheticLikelihood.test_simulator
-summary = SyntheticLikelihood.test_summary
+simulator = SyntheticLikelihood.deterministic_test_simulator
+θ_true = [2., 5]
+n_sim = 100
 
-θ_vec = [1.0, 2, 3, 4, 5]
-n_sim = 10
+d = MvNormal(length(θ_true), 2)
+θ = peturb(θ_true, d, n_sim)
 
-θ_array = [1.0 2; 3 4; 4 5]
+s1 = simulate_n_s(θ_true; simulator, summary=identity, n_sim=10)
+s2 = simulate_n_s(θ; simulator, summary=identity)
 
-x1 = simulate_n_s(θ_vec; simulator, summary, n_sim)
-x2 = simulate_n_s(θ_array; simulator, summary)
-
-@test size(x1) == (n_sim, length(θ_vec))
-@test size(x2) == size(θ_array)  # Uses fact summary does nothing
+@test isapprox(s1, reduce(hcat, fill([2, 10, 25], 10))')
+@test isapprox(s2[:,1], θ[:,1])  # Would fail if data race occurs

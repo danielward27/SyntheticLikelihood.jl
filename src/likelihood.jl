@@ -7,30 +7,29 @@ Evaluates synthetic likelhood of observed data for a fixed parameter vector
     $(SIGNATURES)
 
 # Arguments
-- `θ::Vector` Parameter vector passed to simulator.
+- `θ::AbstractVector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
 - `summary::Function` Summary function that takes output of simulator.
-- `s_true::Vector` Observed summary statistics.
+- `s_true::AbstractVector` Observed summary statistics.
 - `n_sim::Int` Number of simulations to use.
-- `simulator_kwargs` Kwargs passed to simulator.
-- `summary_kwargs` Kwargs passed to summary.
+- `simulator_kwargs` Kwargs splatted in simulator.
+- `summary_kwargs` Kwargs splatted in summary.
 """
 function synthetic_likelihood(
-    θ::Vector;
+    θ::AbstractVector;
     simulator::Function,
     summary::Function,
-    s_true::Vector,
+    s_true::AbstractVector,
     n_sim::Int,
-    simulator_kwargs,
-    summary_kwargs,
+    simulator_kwargs = NamedTuple(),
+    summary_kwargs = NamedTuple(),
     )
 
-    x = simulator(θ; simulator_kwargs...)
-    s = summary(x; summary_kwargs...)
+    s = simulate_n_s(θ; simulator, summary, n_sim,
+                             simulator_kwargs, summary_kwargs)
 
-    sum_stats = sim_sum(θ, simulator, sum_stats, n_s, n_sims)
-    μ = mean.(eachcol(sum_stats))
-    Σ = cov(sum_stats)
+    μ = mean.(eachcol(s))
+    Σ = cov(s)
     mvn = MultivariateNormal(μ, Σ)
 
     return logpdf(mvn, s_true)
