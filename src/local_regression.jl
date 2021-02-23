@@ -20,8 +20,6 @@ function quadratic_transform(X::AbstractMatrix)
 end
 
 
-
-
 """
 Carry out linear regression. X should have a bias column.
 Returns tuple (β, ŷ).
@@ -36,7 +34,13 @@ end
 
 
 """
-Struct that contains the information from the first local regression.
+Struct that contains the estimated local properties of μ.
+
+# Fields
+- `μ::Float64` Mean of the summary statistic.
+- `∂::Vector{Float64}` First derivitive w.r.t. parameters.
+- `∂²::Matrix{Float64}` Second derivitive w.r.t. parameters.
+- `ϵ::Vector{Float64}` Residuals.
 """
 struct Localμ
     μ::Float64
@@ -46,9 +50,10 @@ struct Localμ
 end
 
 """
-Constructor that finds the local behaviour of the summary statistic mean μ.
-Returns Localμ struct, containing the first and second derivitive estimates
-as well as the regression residuals.
+Finds the local behaviour of the summary statistic mean μ.
+Uses quadratic linear regression to approximate the mean, gradient and
+hessian around `θ_orig`. Returns a vector of `Localμ` structs (see above),
+with length equal to the number of summary statistics.
 
 $(SIGNATURES)
 
@@ -57,7 +62,7 @@ $(SIGNATURES)
 - `θ::AbstractMatrix` Peturbed θ (sampled from local area).
 - `s::AbstractMatrix` Corresponding summary statistics to θ.
 """
-function Localμ(;
+function quadratic_local_μ(;
     θ_orig::AbstractVector,
     θ::AbstractArray,
     s::AbstractArray)
