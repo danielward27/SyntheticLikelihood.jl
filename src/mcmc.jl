@@ -4,15 +4,12 @@
 
 
 
-@with_kw mutable struct MCMC
+mutable struct MCMC
     θ::AbstractVector
     objective::Function
     propose::Function
     counter::Int
 end
-
-
-
 
 
 # One step?

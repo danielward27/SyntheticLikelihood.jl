@@ -17,7 +17,7 @@ $(SIGNATURES)
 - `n_sim::Int` Number of simulations.
 - `simulator_kwargs` Kwargs passed to simulator.
 - `summary_kwargs` Kwargs passed to summary.
-- `parallel::Bool = true` Wheter to run on multiple threads.
+- `parallel::Bool = true` Whether to run on multiple threads.
 """
 function simulate_n_s(
     θ::AbstractVector;
@@ -36,19 +36,17 @@ function simulate_n_s(
     results = Array{Float64}(undef, n_sim, length(s))
     results[1, :] = s
 
-    function fill_results!(i)
-        x = simulator(θ, simulator_kwargs...)
-        s = summary(x, summary_kwargs...)
-        results[i, :] = s
-    end
-
     if parallel
+        # Note storing intermediate results naively could create a data race
         Threads.@threads for i in 2:n_sim
-            fill_results!(i)
+            results[i, :] = summary(simulator(θ; simulator_kwargs...),
+                                    summary_kwargs...)
         end
     else
         for i in 2:n_sim
-            fill_results!(i)
+            x = simulator(θ; simulator_kwargs...)
+            s = summary(x; summary_kwargs...)
+            results[i, :] = s
         end
     end
 
@@ -78,20 +76,17 @@ function simulate_n_s(
     results = Array{Float64}(undef, size(θ)[1], length(s))
     results[1, :] = s
 
-    function fill_results!(i)
-        x = simulator(θ[i, :], simulator_kwargs...)
-        s = summary(x, summary_kwargs...)
-        results[i, :] = s
-    end
-
     if parallel
         Threads.@threads for i in 2:size(θ)[1]
-            fill_results!(i)
-        end
+            results[i, :] = summary(simulator(θ[i, :]; simulator_kwargs...);
+                                    summary_kwargs...)
+                                end
 
     else
         for i in 2:size(θ)[1]
-            fill_results(i)
+            x = simulator(θ[i, :]; simulator_kwargs...)
+            s = summary(x; summary_kwargs...)
+            results[i, :] = s
         end
     end
 

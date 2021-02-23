@@ -2,7 +2,6 @@ module SyntheticLikelihood
 
 using Distributions
 using DocStringExtensions
-using Parameters
 using LinearAlgebra
 using Statistics
 
@@ -20,9 +19,15 @@ export simulate_n_s
 # likelihood
 export synthetic_likelihood
 
+# local regression
+export quadratic_transform
+export linear_regression
+export get_local_μ
+
 # mcmc
 
 # utils
 export peturb
+export pairwise_combinations
 
 end
