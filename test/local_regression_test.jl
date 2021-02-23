@@ -19,7 +19,7 @@ X, combinations = quadratic_transform(X)
 @test isapprox(y, ŷ)
 
 
-## Test get_local_μ gives reasonable results
+## Test Localμ gives reasonable results
 
 simulator = SyntheticLikelihood.deterministic_test_simulator
 
@@ -28,7 +28,7 @@ P = MvNormal(length(θ_orig), 2)
 θ = peturb(θ_orig, P, 100)
 s = simulate_n_s(θ; simulator, summary=identity)
 
-μ = get_local_μ(;θ_orig, θ, s)
+μ = Localμ(;θ_orig, θ, s)
 
 # Test means
 @test isapprox(μ[1].μ, 2)

@@ -4,7 +4,6 @@ Quadratic transform. Bias term appended as first column internally.
 Returns a tuple, with the matrix and the corresponding indices multiplied,
 that give rise to each column. Note, indices [1, 1] corresponds to the bias
 term (so indices compared to original matrix is shifted).
-A bit naive so could be sped up but neat.
 
 $(SIGNATURES)
 """
@@ -12,6 +11,8 @@ function quadratic_transform(X::AbstractMatrix)
     X = hcat(ones(size(X)[1]), X)  # Bias
     combinations = pairwise_combinations(size(X)[2])
     result = Matrix{Float64}(undef, size(X)[1], size(combinations)[1])
+
+    # A bit naive so could be sped up but neat.
     for (i, idxs) in enumerate(eachrow(combinations))
         result[:, i] = X[:, idxs[1]] .* X[:, idxs[2]]
     end
@@ -45,8 +46,9 @@ struct Localμ
 end
 
 """
-Gets the local behaviour of μ. Returns Localμ struct, containing the first and
-second derivitive estimates as well as the regression residuals.
+Constructor that finds the local behaviour of the summary statistic mean μ.
+Returns Localμ struct, containing the first and second derivitive estimates
+as well as the regression residuals.
 
 $(SIGNATURES)
 
@@ -55,7 +57,7 @@ $(SIGNATURES)
 - `θ::AbstractMatrix` Peturbed θ (sampled from local area).
 - `s::AbstractMatrix` Corresponding summary statistics to θ.
 """
-function get_local_μ(;
+function Localμ(;
     θ_orig::AbstractVector,
     θ::AbstractArray,
     s::AbstractArray)

@@ -1,12 +1,10 @@
 # Contains general functoins for the simulation interface
 
 """
-Simulates summary statistics from the model under a fixed parameter vector,
-or a matrix of parameter vectors. If a vector is used, `n_sim` is specified as
-the number of simulations. If a matrix is used, one simulation is carried out
-using each row as a parameter vector. By defualt simulations are run on multiple
-threads (see Threads manual for information on starting Julia with multiple
-threads).
+Simulates summary statistics from the model under a fixed parameter vector.
+`n_sim` is specified as the number of simulations. By defualt simulations are
+run on multiple threads (see Threads manual for information on starting Julia
+with multiple threads).
 
 $(SIGNATURES)
 
@@ -55,8 +53,8 @@ end
 
 
 """
-As for above, but uses an Array of parameter values are used, carrying out one
-    simulation from each row of θ.
+As for above, but a Matrix of parameter values are used, carrying out one
+    simulation from each row of θ (and hence `n_sim` is not required).
 
     $(SIGNATURES)
 """
