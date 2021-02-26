@@ -2,16 +2,16 @@
 
 """
 Simulates summary statistics from the model under a fixed parameter vector.
-`n_sim` is specified as the number of simulations. By defualt simulations are
-run on multiple threads (see Threads manual for information on starting Julia
-with multiple threads).
+`n_sim` is specified as the number of simulations. Simulations can be run on
+multiple threads using `parallel = true`. By defualt no summary statistic function
+is used (by passing the `identity` function).
 
 $(SIGNATURES)
 
 # Arguments
 - `θ::AbstractVector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
-- `summary::Function` Summary function that takes output of simulator.
+- `summary::Function` Summary function that takes output of simulator (defualt identity).
 - `n_sim::Int` Number of simulations.
 - `simulator_kwargs` Kwargs passed to simulator.
 - `summary_kwargs` Kwargs passed to summary.
@@ -20,11 +20,11 @@ $(SIGNATURES)
 function simulate_n_s(
     θ::AbstractVector;
     simulator::Function,
-    summary::Function,
+    summary::Function = identity,
     n_sim::Int,
     simulator_kwargs = Dict(),
     summary_kwargs = Dict(),
-    parallel::Bool = true
+    parallel::Bool = false
     )
 
     # First simulation outside for loop to get s length
@@ -61,10 +61,10 @@ As for above, but a Matrix of parameter values are used, carrying out one
 function simulate_n_s(
     θ::AbstractMatrix;
     simulator::Function,
-    summary::Function,
+    summary::Function = identity,
     simulator_kwargs = Dict(),
     summary_kwargs = Dict(),
-    parallel::Bool = true
+    parallel::Bool = false
     )
 
     # First simulation outside for loop to get s length
