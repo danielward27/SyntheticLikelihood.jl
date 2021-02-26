@@ -71,17 +71,17 @@ function simulate_n_s(
     x = simulator(θ[1, :]; simulator_kwargs...)
     s = summary(x; summary_kwargs...)
 
-    results = Array{Float64}(undef, size(θ)[1], length(s))
+    results = Array{Float64}(undef, size(θ, 1), length(s))
     results[1, :] = s
 
     if parallel
-        Threads.@threads for i in 2:size(θ)[1]
+        Threads.@threads for i in 2:size(θ, 1)
             results[i, :] = summary(simulator(θ[i, :]; simulator_kwargs...);
                                     summary_kwargs...)
                                 end
 
     else
-        for i in 2:size(θ)[1]
+        for i in 2:size(θ, 1)
             x = simulator(θ[i, :]; simulator_kwargs...)
             s = summary(x; summary_kwargs...)
             results[i, :] = s

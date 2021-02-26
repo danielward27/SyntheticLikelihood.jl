@@ -4,7 +4,7 @@ Random.seed!(1)
 
 X = [1 2; 4 3]
 expected_result = [1 1 1 2 2 4; 1 4 16 3 12 9]
-@test quadratic_transform(X)[1] == expected_result
+@test quadratic_design_matrix(X)[1] == expected_result
 
 ## Quadratic regression should be able to represent true quadratic perfectly
 function quadratic(x1::Vector{Float64}, x2::Vector{Float64})
@@ -14,12 +14,12 @@ end
 X = rand(10, 2)
 y = quadratic(X[:, 1], X[:, 2])
 
-X, combinations = quadratic_transform(X)
+X, combinations = quadratic_design_matrix(X)
 β, ŷ = linear_regression(X, y)
 @test isapprox(y, ŷ)
 
 
-## Test quadratic_local_μ gives reasonable results
+## Test quadratic_local_μ gives expected results for deterministic quadratic simulator
 
 simulator = SyntheticLikelihood.deterministic_test_simulator
 
@@ -39,3 +39,7 @@ s = simulate_n_s(θ; simulator, summary=identity)
 @test isapprox(μ[1].∂[1], 1)
 @test isapprox(μ[3].∂²[2,2], 1)
 @test isapprox(μ[3].∂²[1,2], 0, atol = 1e-10)
+
+# Residuals should all be zero as deterministic quadratic example
+@test get_residuals(μ) == [μ[1].ϵ'; μ[2].ϵ'; μ[3].ϵ']'
+@test isapprox(get_residuals(μ), fill(0., size(s)); atol = 1e-10)

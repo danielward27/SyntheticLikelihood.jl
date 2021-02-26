@@ -20,10 +20,11 @@ export simulate_n_s
 export synthetic_likelihood
 
 # local regression
-export quadratic_transform
+export quadratic_design_matrix
 export linear_regression
 export Localμ
 export quadratic_local_μ
+export get_residuals
 
 # mcmc
 
