@@ -101,3 +101,51 @@ function get_residuals(μ_vec::Vector{Localμ})
     vecvec = [μ.ϵ for μ in μ_vec]
     reduce(hcat, vecvec)
 end
+
+
+"""
+Struct that contains the estimated local properties of Σ (the covariance matrix
+of the summary statistics).
+
+# Fields
+- Σ The expected value of the diagonal covariance matrix (of summary
+    statistics). A vector of length n_sum_stats.
+- ∂ The first derivitives of Σ, of dimension (n_s × n_s × n_θ).
+"""
+struct LocalΣ
+    Σ::Vector{Float64}
+    ∂::Array{Float64, 3}
+end
+
+
+"""
+Use a gamma distributed GLM with log link function to estimate the local properties
+    of Σ. θ should not have a bias term (added internally).
+
+# Arguments
+- `θ_orig::AbstractVector`  Original θ (used for centering).
+- `θ::AbstractMatrix` Peturbed θ from local area.
+- `ϵ::AbstractMatrix` Residuals from quadratic regression.
+"""
+function glm_local_Σ(;
+    θ_orig::AbstractVector,
+    θ::AbstractMatrix,
+    ϵ::AbstractMatrix)
+
+    n = size(ϵ, 2)
+    N = length(θ_orig)
+    θ = θ .- θ_orig'  # Center
+    θ = hcat(ones(size(θ, 1)), θ)  # Bias
+    ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
+
+    Σ = LocalΣ(Vector{Float64}(undef, n),
+               Array{Float64}(undef, n, n, N))
+
+    for j in 1:n
+        ϕv = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
+        print(ϕv)
+        Σ.Σ[j] = exp(ϕv[1])
+        Σ.∂[j, j, :] = ϕv[2:end]  # TODO This isn't quite right, need  *exp(ϕ) and update related tests
+    end
+    Σ
+end

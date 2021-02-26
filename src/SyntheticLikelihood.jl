@@ -4,6 +4,7 @@ using Distributions
 using DocStringExtensions
 using LinearAlgebra
 using Statistics
+using GLM
 
 
 include("simulation_interface.jl")
@@ -25,6 +26,8 @@ export linear_regression
 export Localμ
 export quadratic_local_μ
 export get_residuals
+export LocalΣ
+export glm_local_Σ
 
 # mcmc
 
