@@ -74,5 +74,5 @@ end
 @test isapprox(ϵ²_model_1.ϕ, log(Σ.Σ[1]); atol = 0.1)
 @test isapprox(ϵ²_model_2.ϕ, log(Σ.Σ[2]); atol = 0.1)
 
-@test isapprox(Σ.∂[1,1,:], ϵ²_model_1.v; atol = 0.2)
-@test isapprox(Σ.∂[2,2,:], ϵ²_model_2.v; atol = 0.2)
+@test isapprox(Σ.∂[1,1,:]./Σ.Σ[1], ϵ²_model_1.v; atol = 0.2)
+@test isapprox(Σ.∂[2,2,:]./Σ.Σ[2], ϵ²_model_2.v; atol = 0.2)

@@ -142,10 +142,14 @@ function glm_local_Σ(;
                Array{Float64}(undef, n, n, N))
 
     for j in 1:n
-        ϕv = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
-        print(ϕv)
-        Σ.Σ[j] = exp(ϕv[1])
-        Σ.∂[j, j, :] = ϕv[2:end]  # TODO This isn't quite right, need  *exp(ϕ) and update related tests
+        coefs = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
+        ϕ = coefs[1]
+        v = coefs[2:end]
+        Σ.Σ[j] = exp(ϕ)
+        Σ.∂[j, j, :] = v.*exp(ϕ)
     end
     Σ
 end
+
+
+# TODO Check if things work with a vector of summary statistics
