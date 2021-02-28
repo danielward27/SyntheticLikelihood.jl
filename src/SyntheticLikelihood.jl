@@ -5,11 +5,11 @@ using DocStringExtensions
 using LinearAlgebra
 using Statistics
 using GLM
-
+import Base.@kwdef
 
 include("simulation_interface.jl")
 include("likelihood.jl")
-include("mcmc.jl")
+include("samplers.jl")
 include("utils.jl")
 include("local_regression.jl")
 
@@ -30,6 +30,10 @@ export LocalΣ
 export glm_local_Σ
 
 # mcmc
+export AbstractSamplerState
+export BasicState
+export GradientState
+export GradientHessianState
 
 # utils
 export peturb
