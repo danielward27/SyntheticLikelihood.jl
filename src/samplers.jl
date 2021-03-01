@@ -66,13 +66,13 @@ are the symbols provided.
 """
 function init_data_tuple(
     state::AbstractSamplerState,
-    data_to_collect::Vector{Symbol},
+    collect_data::Vector{Symbol},
     n_steps::Integer)
 
-    names = data_to_collect
+    names = collect_data
     values = Vector{Array}(undef, length(names))
 
-    for (i, symbol) in enumerate(data_to_collect)
+    for (i, symbol) in enumerate(collect_data)
         values[i] = Vector{typeof(getproperty(state, symbol))}(undef, n_steps)
     end
     (;zip(names, values)...)
@@ -114,22 +114,22 @@ Arguments:
 `step_size` Multiplied elementwise by gradient.
 `ξ::Sampleable` Distribution to add noise to the diffusion. Added elementwise.
 `n_steps::Integer` Number of iterations to carry out.
-`data_to_collect::AbstractVector{Symbol}` Vector of symbols, denoting the
+`collect_data::AbstractVector{Symbol}` Vector of symbols, denoting the
     items in the state to store at each iteration.
 
 $(SIGNATURES)
 """
-function langevin_diffusion(;
-    state::GradientState,
+function langevin_diffusion(
+    state::GradientState;
     objective::Function,
     gradient::Function,
     step_size,
     ξ::Sampleable,
     n_steps::Integer,
-    data_to_collect::AbstractVector{Symbol} = [:θ, :objective]
+    collect_data::AbstractVector{Symbol} = [:θ, :objective]
     )
 
-    data = init_data_tuple(state, data_to_collect, n_steps)
+    data = init_data_tuple(state, collect_data, n_steps)
 
     for i in 1:n_steps
         state.θ = state.θ + step_size/2 .* state.gradient .+ rand(ξ)
@@ -140,4 +140,26 @@ function langevin_diffusion(;
         add_state!(data, state, i)
     end
     data, state
+end
+
+
+"""
+As above, but the initial state is induced from init_θ, rather than explicitly
+providing a startings state.
+
+$(SIGNATURES)
+"""
+function langevin_diffusion(
+    init_θ::AbstractVector{Float64};
+    objective::Function,
+    gradient::Function,
+    step_size,
+    ξ::Sampleable,
+    n_steps::Integer,
+    collect_data::AbstractVector{Symbol} = [:θ, :objective]
+    )
+    state = GradientState(init_θ, objective(init_θ), gradient(init_θ))
+    langevin_diffusion(
+        state; objective, gradient, step_size, ξ, n_steps, collect_data
+        )
 end
