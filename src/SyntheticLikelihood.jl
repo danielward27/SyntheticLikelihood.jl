@@ -35,7 +35,7 @@ export BasicState
 export GradientState
 export GradientHessianState
 
-export LangevinDiffusion
+export langevin_diffusion
 
 # utils
 export peturb

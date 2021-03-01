@@ -9,9 +9,9 @@ $(SIGNATURES)
 # Arguments
 - `θ::AbstractVector` Parameter to peturb.
 - `d::Sampleable` Distribution from which to sample (see Distributions.jl).
--  `n::Int = 1` Number of peturbed vectors to return.
+-  `n::Integer = 1` Number of peturbed vectors to return.
 """
-function peturb(θ::AbstractVector, d::Sampleable, n::Int = 1)
+function peturb(θ::AbstractVector, d::Sampleable, n::Integer = 1)
     (rand(d, n) .+ θ)'
 end
 
@@ -22,7 +22,7 @@ pairwise combinations between 1:5 (including matched terms e.g. [1,1]).
 $(SIGNATURES)
 
 """
-function pairwise_combinations(n::Int)
+function pairwise_combinations(n::Integer)
     n_combinations = binomial(n, 2) + n
     combinations = Matrix{Int64}(undef, n_combinations, 2)
     row = 1

@@ -11,7 +11,7 @@ Evaluates synthetic likelhood of observed data for a fixed parameter vector
 - `simulator::Function` Simulator.
 - `summary::Function` Summary function that takes output of simulator (defualt identity).
 - `s_true::AbstractVector` Observed summary statistics.
-- `n_sim::Int` Number of simulations to use.
+- `n_sim::Integer` Number of simulations to use.
 - `simulator_kwargs` Kwargs splatted in simulator.
 - `summary_kwargs` Kwargs splatted in summary.
 """
@@ -20,7 +20,7 @@ function synthetic_likelihood(
     simulator::Function,
     summary::Function = identity,
     s_true::AbstractVector,
-    n_sim::Int,
+    n_sim::Integer,
     simulator_kwargs = NamedTuple(),
     summary_kwargs = NamedTuple(),
     )
