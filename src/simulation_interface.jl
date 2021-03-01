@@ -12,7 +12,7 @@ $(SIGNATURES)
 - `θ::AbstractVector` Parameter vector passed to simulator.
 - `simulator::Function` Simulator.
 - `summary::Function` Summary function that takes output of simulator (defualt identity).
-- `n_sim::Int` Number of simulations.
+- `n_sim::Integer` Number of simulations.
 - `simulator_kwargs` Kwargs passed to simulator.
 - `summary_kwargs` Kwargs passed to summary.
 - `parallel::Bool = true` Whether to run on multiple threads.
@@ -21,7 +21,7 @@ function simulate_n_s(
     θ::AbstractVector;
     simulator::Function,
     summary::Function = identity,
-    n_sim::Int,
+    n_sim::Integer,
     simulator_kwargs = Dict(),
     summary_kwargs = Dict(),
     parallel::Bool = false

@@ -5,7 +5,7 @@
 Concrete sampler types should have fields:
 - θ::AbstractVector
 - objective::Float64
-- counter::Int
+- counter::Integer
 
 """
 abstract type AbstractSamplerState end
@@ -18,7 +18,7 @@ Struct for containing the state of sampler at each iteration
 mutable struct BasicState <: AbstractSamplerState
     θ::AbstractVector{Float64}
     objective::Float64
-    counter::Int
+    counter::Integer
     BasicState(θ, objective) = new(θ, objective, 0)
 end
 
@@ -31,7 +31,7 @@ Struct for containing the state of sampler at each iteration
 mutable struct GradientState <: AbstractSamplerState
     θ::AbstractVector{Float64}
     objective::Float64
-    counter::Int
+    counter::Integer
     gradient::AbstractVector
 
     function GradientState(θ, objective, gradient)
@@ -48,7 +48,7 @@ Struct for containing the state of sampler at each iteration
 mutable struct GradientHessianState <: AbstractSamplerState
     θ::AbstractVector{Float64}
     objective::Float64
-    counter::Int
+    counter::Integer
     gradient::AbstractVector
     hessian::AbstractMatrix
     function GradientState(θ, objective, gradient, hessian)
@@ -67,7 +67,7 @@ are the symbols provided.
 function init_data_tuple(
     state::AbstractSamplerState,
     data_to_collect::Vector{Symbol},
-    n_steps::Int)
+    n_steps::Integer)
 
     names = data_to_collect
     values = Vector{Array}(undef, length(names))
@@ -82,7 +82,7 @@ end
 Add data to the data tuple.
 """
 function add_state!(
-    data::NamedTuple, state::AbstractSamplerState, idx::Int)
+    data::NamedTuple, state::AbstractSamplerState, idx::Integer)
     for symbol in keys(data)
         field = getproperty(state, symbol)
         data[symbol][idx] = field
@@ -97,8 +97,10 @@ end
 
 # TODO Update documentation below
 # TODO Test it (and data storage)
+
 """
-Sample using Langevin diffusion (unadjusted Langevin algorithm). This uses the
+Sample using Langevin diffusion . Uses a discrete time Euler approximation of
+the Langevin diffusion (unadjusted Langevin algorithm), given by the update
 update θ := θ + step_size/2 .* ∇θ .+ ξ. ξ is usually Brownian noise.
 Uses a fixed step size.
 
@@ -111,7 +113,7 @@ Arguments:
 `gradient::Function` Gradient of the objective function with respect to the parameters.
 `step_size` Multiplied elementwise by gradient.
 `ξ::Sampleable` Distribution to add noise to the diffusion. Added elementwise.
-`n_steps::Int` Number of iterations to carry out.
+`n_steps::Integer` Number of iterations to carry out.
 `data_to_collect::AbstractVector{Symbol}` Vector of symbols, denoting the
     items in the state to store at each iteration.
 
@@ -123,7 +125,7 @@ function langevin_diffusion(;
     gradient::Function,
     step_size,
     ξ::Sampleable,
-    n_steps::Int,
+    n_steps::Integer,
     data_to_collect::AbstractVector{Symbol} = [:θ, :objective]
     )
 
