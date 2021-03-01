@@ -11,7 +11,7 @@ n_steps = 1000
 
 state = GradientState(init_θ, objective(init_θ), gradient(init_θ))
 
-data, state = LangevinDiffusion(;
+data, state = langevin_diffusion(;
         state, objective, gradient, step_size = 1,
         ξ = MvNormal([0.5 0; 0 0.5]), n_steps,
         data_to_collect = [:θ, :counter])

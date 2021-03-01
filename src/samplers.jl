@@ -117,7 +117,7 @@ Arguments:
 
 $(SIGNATURES)
 """
-function LangevinDiffusion(;
+function langevin_diffusion(;
     state::GradientState,
     objective::Function,
     gradient::Function,
