@@ -78,12 +78,33 @@ function init_data_tuple(
     (;zip(names, values)...)
 end
 
+"""
+Add data to the data tuple.
+"""
+function add_state!(
+    data::NamedTuple, state::AbstractSamplerState, idx::Int)
+    for symbol in keys(data)
+        field = getproperty(state, symbol)
+        data[symbol][idx] = field
+    end
+    data
+end
+
+
+
 
 ## Sampling algorithms
 
 # TODO Update documentation below
 # TODO Test it (and data storage)
 """
+Sample using Langevin diffusion (unadjusted Langevin algorithm). This uses the
+update θ := θ + step_size/2 .* ∇θ .+ ξ. ξ is usually Brownian noise.
+Uses a fixed step size.
+
+Returns a tuple, (data, state), where data is a NamedTuple of stored data,
+and state is the state at the final iteration.
+
 Arguments:
 `state::GradientState` Initial starting state for sampler.
 `objective::Function` Objective function (assumed aim would be to maximize)
@@ -91,6 +112,8 @@ Arguments:
 `step_size` Multiplied elementwise by gradient.
 `ξ::Sampleable` Distribution to add noise to the diffusion. Added elementwise.
 `n_steps::Int` Number of iterations to carry out.
+`data_to_collect::AbstractVector{Symbol}` Vector of symbols, denoting the
+    items in the state to store at each iteration.
 
 $(SIGNATURES)
 """
@@ -112,11 +135,7 @@ function LangevinDiffusion(;
         state.objective = objective(state.θ)
         state.counter += 1
 
-        for symbol in data_to_collect
-            field = getproperty(state, symbol)
-            data[symbol][i] = field
-        end
-
+        add_state!(data, state, i)
     end
     data, state
 end

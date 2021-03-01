@@ -18,7 +18,6 @@ data, state = LangevinDiffusion(;
 
 θ_samples = reduce(hcat, data[:θ])'
 θ_samples = θ_samples[100:end, :]  # Remove burn in
-counter = data[:counter]
 
 @test isapprox(mean.(eachcol(θ_samples)), [0, 0]; atol = 2)
-@test counter == Vector(1:n_steps)
+@test data[:counter] == Vector(1:n_steps)
