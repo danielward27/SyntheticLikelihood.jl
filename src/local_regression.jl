@@ -8,7 +8,7 @@ the bias term (so indices compared to original matrix is shifted).
 $(SIGNATURES)
 """
 function quadratic_design_matrix(X::AbstractMatrix)
-    X = hcat(ones(size(X, 1)), X)  # Bias
+    X = [ones(size(X, 1)) X]  # Bias
     combinations = pairwise_combinations(size(X, 2))
     result = Matrix{Float64}(undef, size(X, 1), size(combinations, 1))
 
