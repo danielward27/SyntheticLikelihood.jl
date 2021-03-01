@@ -16,10 +16,10 @@ Struct for containing the state of sampler at each iteration
     for simple samplers (that just require objective evaluation).
 """
 mutable struct BasicState <: AbstractSamplerState
-    θ::AbstractVector
+    θ::AbstractVector{Float64}
     objective::Float64
     counter::Int
-    BasicState(θ, objective) = new(θ, objective, 1)
+    BasicState(θ, objective) = new(θ, objective, 0)
 end
 
 
@@ -29,14 +29,14 @@ Struct for containing the state of sampler at each iteration
     for simple gradient based samplers.
 """
 mutable struct GradientState <: AbstractSamplerState
-    θ::AbstractVector
+    θ::AbstractVector{Float64}
     objective::Float64
     counter::Int
     gradient::AbstractVector
 
     function GradientState(θ, objective, gradient)
         @assert length(θ) == length(gradient)
-        new(θ, objective, 1, gradient)
+        new(θ, objective, 0, gradient)
     end
 end
 
@@ -46,14 +46,14 @@ Struct for containing the state of sampler at each iteration
     for samplers which use the gradient and hessian.
 """
 mutable struct GradientHessianState <: AbstractSamplerState
-    θ::AbstractVector
+    θ::AbstractVector{Float64}
     objective::Float64
     counter::Int
     gradient::AbstractVector
     hessian::AbstractMatrix
     function GradientState(θ, objective, gradient, hessian)
         @assert length(θ)==length(gradient)==shape(hessian, 1)==shape(hessian, 2)
-        new(θ, objective, 1, gradient)
+        new(θ, objective, 0, gradient)
     end
 end
 
@@ -72,7 +72,6 @@ function init_data_tuple(
     names = data_to_collect
     values = Vector{Array}(undef, length(names))
 
-    # [typeof(getproperty(state, symbol))(undef, nsteps for symbol in data_to_collect)]
     for (i, symbol) in enumerate(data_to_collect)
         values[i] = Vector{typeof(getproperty(state, symbol))}(undef, n_steps)
     end
@@ -89,17 +88,17 @@ Arguments:
 `state::GradientState` Initial starting state for sampler.
 `objective::Function` Objective function (assumed aim would be to maximize)
 `gradient::Function` Gradient of the objective function with respect to the parameters.
-`step_size::Union{AbstractVector, Float64}` Multiplied elementwise by gradient.
+`step_size` Multiplied elementwise by gradient.
 `ξ::Sampleable` Distribution to add noise to the diffusion. Added elementwise.
 `n_steps::Int` Number of iterations to carry out.
 
 $(SIGNATURES)
 """
-function LangevinDiffusionSampler(;
+function LangevinDiffusion(;
     state::GradientState,
     objective::Function,
     gradient::Function,
-    step_size::Union{AbstractVector, Float64},
+    step_size,
     ξ::Sampleable,
     n_steps::Int,
     data_to_collect::AbstractVector{Symbol} = [:θ, :objective]
