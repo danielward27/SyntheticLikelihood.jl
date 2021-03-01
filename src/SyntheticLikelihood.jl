@@ -35,6 +35,8 @@ export BasicState
 export GradientState
 export GradientHessianState
 
+export LangevinDiffusion
+
 # utils
 export peturb
 export pairwise_combinations
