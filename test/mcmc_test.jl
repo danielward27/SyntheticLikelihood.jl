@@ -1,1 +1,0 @@
-using SyntheticLikelihood, Test

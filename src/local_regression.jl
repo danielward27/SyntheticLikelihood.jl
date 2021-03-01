@@ -1,17 +1,18 @@
 
 """
-Quadratic transform. Bias term appended as first column internally.
-Returns a tuple, with the matrix and the corresponding indices multiplied,
-that give rise to each column. Note, indices [1, 1] corresponds to the bias
-term (so indices compared to original matrix is shifted).
-A bit naive so could be sped up but neat.
+Design matrix for quadratic regression. Bias term appended as first column
+internally. Returns a tuple, with the matrix and the corresponding indices
+multiplied, that give rise to each column. Note, indices [1, 1] corresponds to
+the bias term (so indices compared to original matrix is shifted).
 
 $(SIGNATURES)
 """
-function quadratic_transform(X::AbstractMatrix)
-    X = hcat(ones(size(X)[1]), X)  # Bias
-    combinations = pairwise_combinations(size(X)[2])
-    result = Matrix{Float64}(undef, size(X)[1], size(combinations)[1])
+function quadratic_design_matrix(X::AbstractMatrix)
+    X = [ones(size(X, 1)) X]  # Bias
+    combinations = pairwise_combinations(size(X, 2))
+    result = Matrix{Float64}(undef, size(X, 1), size(combinations, 1))
+
+    # A bit naive so could be sped up but neat.
     for (i, idxs) in enumerate(eachrow(combinations))
         result[:, i] = X[:, idxs[1]] .* X[:, idxs[2]]
     end
@@ -25,15 +26,21 @@ Returns tuple (β, ŷ).
 
 $(SIGNATURES)
 """
-function linear_regression(X::AbstractMatrix, s::AbstractVector)
-    β = X \ s  # Linear regression
+function linear_regression(X::AbstractMatrix, y::AbstractVector)
+    β = X \ y  # Linear regression
     ŷ = X * β
     (β = β, ŷ = ŷ)
 end
 
 
 """
-Struct that contains the information from the first local regression.
+Struct that contains the estimated local properties of μ.
+
+# Fields
+- `μ::Float64` Mean of the summary statistic.
+- `∂::Vector{Float64}` First derivitive w.r.t. parameters.
+- `∂²::Matrix{Float64}` Second derivitive w.r.t. parameters.
+- `ϵ::Vector{Float64}` Residuals.
 """
 struct Localμ
     μ::Float64
@@ -43,8 +50,10 @@ struct Localμ
 end
 
 """
-Gets the local behaviour of μ. Returns Localμ struct, containing the first and
-second derivitive estimates as well as the regression residuals.
+Finds the local behaviour of the summary statistic mean μ.
+Uses quadratic linear regression to approximate the mean, gradient and
+hessian around `θ_orig`. Returns a vector of `Localμ` structs (see above),
+with length equal to the number of summary statistics.
 
 $(SIGNATURES)
 
@@ -53,15 +62,15 @@ $(SIGNATURES)
 - `θ::AbstractMatrix` Peturbed θ (sampled from local area).
 - `s::AbstractMatrix` Corresponding summary statistics to θ.
 """
-function get_local_μ(;
+function quadratic_local_μ(;
     θ_orig::AbstractVector,
     θ::AbstractArray,
     s::AbstractArray)
-    @assert size(θ)[1] == size(s)[1]
+    @assert size(θ, 1) == size(s, 1)
 
     # Center and carry out quadratic regression for each s
     θ = θ .- θ_orig'
-    θ, combinations = quadratic_transform(θ)
+    θ, combinations = quadratic_design_matrix(θ)
 
     d = size(s)[2]
     μ = Vector{Localμ}(undef, d)
@@ -70,8 +79,7 @@ function get_local_μ(;
        β, ŝ = linear_regression(θ, s[:, i])
 
        # Convert β to matrix
-       n_features = floor(Int, 1/2 * (sqrt(8*length(β)+1) -1) + 0.1)
-       β_mat = Matrix{Float64}(undef, n_features, n_features)
+       β_mat = Matrix{Float64}(undef, length(θ_orig) + 1, length(θ_orig) + 1)
 
        for (i, row) in enumerate(eachrow(combinations))
            β_mat[row[1], row[2]] = β[i]  # Upper traingular
@@ -79,7 +87,69 @@ function get_local_μ(;
 
        β_mat = Symmetric(β_mat)
        μ[i] = Localμ(β_mat[1,1], β_mat[2:end, 1],
-                     β_mat[2:end, 2:end], ŝ-s[:, 1])
+                     β_mat[2:end, 2:end], ŝ-s[:, i])
     end
     μ
 end
+
+
+"""
+Get an array of residuals from a vector of Localμ structs.
+Returns (length of residuals × number of summary stats) matrix
+"""
+function get_residuals(μ_vec::Vector{Localμ})
+    vecvec = [μ.ϵ for μ in μ_vec]
+    reduce(hcat, vecvec)
+end
+
+
+"""
+Struct that contains the estimated local properties of Σ (the covariance matrix
+of the summary statistics).
+
+# Fields
+- Σ The expected value of the diagonal covariance matrix (of summary
+    statistics). A vector of length n_sum_stats.
+- ∂ The first derivitives of Σ, of dimension (n_s × n_s × n_θ).
+"""
+struct LocalΣ
+    Σ::Vector{Float64}
+    ∂::Array{Float64, 3}
+end
+
+
+"""
+Use a gamma distributed GLM with log link function to estimate the local properties
+    of Σ. θ should not have a bias term (added internally).
+
+# Arguments
+- `θ_orig::AbstractVector`  Original θ (used for centering).
+- `θ::AbstractMatrix` Peturbed θ from local area.
+- `ϵ::AbstractMatrix` Residuals from quadratic regression.
+"""
+function glm_local_Σ(;
+    θ_orig::AbstractVector,
+    θ::AbstractMatrix,
+    ϵ::AbstractMatrix)
+
+    n = size(ϵ, 2)
+    N = length(θ_orig)
+    θ = θ .- θ_orig'  # Center
+    θ = hcat(ones(size(θ, 1)), θ)  # Bias
+    ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
+
+    Σ = LocalΣ(Vector{Float64}(undef, n),
+               Array{Float64}(undef, n, n, N))
+
+    for j in 1:n
+        coefs = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
+        ϕ = coefs[1]
+        v = coefs[2:end]
+        Σ.Σ[j] = exp(ϕ)
+        Σ.∂[j, j, :] = v.*exp(ϕ)
+    end
+    Σ
+end
+
+
+# TODO Check if things work with a vector of summary statistics
