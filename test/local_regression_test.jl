@@ -45,7 +45,15 @@ s = simulate_n_s(θ; simulator, summary=identity)
 @test isapprox(get_residuals(μ), fill(0., size(s)); atol = 1e-10)
 
 
+# Check regression works with summary vector length 1
+s = s[:, 1]
+s = reshape(s, 100, 1)
+μ = quadratic_local_μ(;θ_orig, θ, s)
+
+@test isapprox(μ[1].μ, 2)
+
 ## Second regression
+@test_throws AssertionError LocalΣ(fill(1, 3, 3), fill(1, 3, 2, 10))
 
 # Diagonal values of Dᵢ=ϵᵢϵᵢᵀ matrix is just ϵ² for each sum stat
 # Make residuals following true model ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
@@ -65,14 +73,14 @@ end
 ϵ²_model_1 = (ϕ = 0.1, v = [0.1, 0.2, 0.3], θ = θ_centered)
 ϵ²_model_2 = (ϕ = 0.5, v = [0.4, 0.5, 0.6], θ = θ_centered)
 
-ϵ² = hcat(test_residuals(; ϵ²_model_1...),
-          test_residuals(; ϵ²_model_2...))
+ϵ² = [test_residuals(; ϵ²_model_1...) test_residuals(; ϵ²_model_2...)]
 
 Σ = glm_local_Σ(; θ_orig, θ, ϵ = sqrt.(ϵ²))
 
 # GLM coefficients ≈ paramters of ϵ² model
-@test isapprox(ϵ²_model_1.ϕ, log(Σ.Σ[1]); atol = 0.1)
-@test isapprox(ϵ²_model_2.ϕ, log(Σ.Σ[2]); atol = 0.1)
+Σⱼⱼ = diag(Σ.Σ)
+@test isapprox(ϵ²_model_1.ϕ, log(Σⱼⱼ[1]); atol = 0.1)
+@test isapprox(ϵ²_model_2.ϕ, log(Σⱼⱼ[2]); atol = 0.1)
 
-@test isapprox(Σ.∂[1,1,:]./Σ.Σ[1], ϵ²_model_1.v; atol = 0.2)
-@test isapprox(Σ.∂[2,2,:]./Σ.Σ[2], ϵ²_model_2.v; atol = 0.2)
+@test isapprox(Σ.∂[1,1,:]./Σⱼⱼ[1], ϵ²_model_1.v; atol = 0.2)
+@test isapprox(Σ.∂[2,2,:]./Σⱼⱼ[2], ϵ²_model_2.v; atol = 0.2)
