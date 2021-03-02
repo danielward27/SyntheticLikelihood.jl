@@ -17,3 +17,17 @@ sample_cov = cov(peturbed)
 pc = SyntheticLikelihood.pairwise_combinations
 @test pc(1) == [1 1]
 @test pc(3) == [1 1; 1 2; 2 2; 1 3; 2 3; 3 3]
+
+## Test stack_arrays
+stack_arrays = SyntheticLikelihood.stack_arrays
+VV = Vector([[1, 2], [3, 4], [5, 6]]) #VecVec
+AV = Vector([[1 1; 1 1], [2 2; 2 2], [1 2; 3 4]])  # ArrayVec
+VV
+AV_expected = Array{Int64}(undef, (3,2,2))
+AV_expected[1, :, :] = fill(1, 2, 2)
+AV_expected[2, :, :] = fill(2, 2, 2)
+AV_expected[3, :, :] = [1 2; 3 4]
+
+@test stack_arrays(VV) == [1 2; 3 4; 5 6]
+@test stack_arrays(AV) == AV_expected
+@test_throws AssertionError stack_arrays([[1,2], [1,2,3]])
