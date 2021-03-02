@@ -72,8 +72,7 @@ end
 ϵ²_model_1 = (ϕ = 0.1, v = [0.1, 0.2, 0.3], θ = θ_centered)
 ϵ²_model_2 = (ϕ = 0.5, v = [0.4, 0.5, 0.6], θ = θ_centered)
 
-ϵ² = hcat(test_residuals(; ϵ²_model_1...),
-          test_residuals(; ϵ²_model_2...))
+ϵ² = [test_residuals(; ϵ²_model_1...) test_residuals(; ϵ²_model_2...)]
 
 Σ = glm_local_Σ(; θ_orig, θ, ϵ = sqrt.(ϵ²))
 
