@@ -23,7 +23,6 @@ mutable struct BasicState <: AbstractSamplerState
 end
 
 
-
 """
 Struct for containing the state of sampler at each iteration
     for simple gradient based samplers.
