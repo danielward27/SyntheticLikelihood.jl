@@ -91,6 +91,24 @@ function add_state!(
 end
 
 
+"""
+Loop through named tuple and call stack_arrays on any vector whose
+elements are an array. Used at end of samplers.
+"""
+function simplify_data(data::NamedTuple)
+    symbols = keys(data)
+    new_values = Vector{Array}(undef, length(symbols))
+
+    for (i, x) in enumerate(data)
+        if x[1] isa Array
+            new_values[i] = stack_arrays(x)
+        else
+            new_values[i] = x
+        end
+    end
+    (;zip(symbols, new_values)...)
+end
+
 
 
 ## Sampling algorithms
@@ -101,20 +119,23 @@ end
 """
 Sample using Langevin diffusion . Uses a discrete time Euler approximation of
 the Langevin diffusion (unadjusted Langevin algorithm), given by the update
-update θ := θ + step_size/2 .* ∇θ .+ ξ. ξ is usually Brownian noise.
+update θ := θ - step_size/2 .* ∇θ .+ ξ. ξ is given by `MvNormal(step_size)`.
 Uses a fixed step size.
 
+Note if the aim is to sample from a density function, the negative of its
+gradient and density should be provided (sampler "aims" to minimize the function).
+
 Returns a tuple, (data, state), where data is a NamedTuple of stored data,
-and state is the state at the final iteration.
+and state is the state at the final iteration, which can be used to reinitialise
+the algorithm if desired.
 
 Arguments:
 `state::GradientState` Initial starting state for sampler.
-`objective::Function` Objective function (assumed aim would be to maximize)
+`objective::Function` Objective function (assumed "aim" would be to minimize)
 `gradient::Function` Gradient of the objective function with respect to the parameters.
-`step_size` Multiplied elementwise by gradient.
-`ξ::Sampleable` Distribution to add noise to the diffusion. Added elementwise.
+`step_size::Vector{Float64}` Multiplied elementwise by gradient.
 `n_steps::Integer` Number of iterations to carry out.
-`collect_data::AbstractVector{Symbol}` Vector of symbols, denoting the
+`collect_data::Vector{Symbol}=[:θ, :objective]` Vector of symbols, denoting the
     items in the state to store at each iteration.
 
 $(SIGNATURES)
@@ -123,22 +144,22 @@ function langevin_diffusion(
     state::GradientState;
     objective::Function,
     gradient::Function,
-    step_size,
-    ξ::Sampleable,
+    step_size::Vector{Float64},
     n_steps::Integer,
-    collect_data::AbstractVector{Symbol} = [:θ, :objective]
+    collect_data::Vector{Symbol} = [:θ, :objective]
     )
-
+    ξ = MvNormal(step_size)
     data = init_data_tuple(state, collect_data, n_steps)
 
     for i in 1:n_steps
-        state.θ = state.θ + step_size/2 .* state.gradient .+ rand(ξ)
+        state.θ = state.θ - step_size/2 .* state.gradient .+ rand(ξ)
         state.gradient = gradient(state.θ)
         state.objective = objective(state.θ)
         state.counter += 1
 
         add_state!(data, state, i)
     end
+    data = simplify_data(data)
     data, state
 end
 
@@ -153,13 +174,12 @@ function langevin_diffusion(
     init_θ::AbstractVector{Float64};
     objective::Function,
     gradient::Function,
-    step_size,
-    ξ::Sampleable,
+    step_size::Vector{Float64},
     n_steps::Integer,
-    collect_data::AbstractVector{Symbol} = [:θ, :objective]
+    collect_data::Vector{Symbol} = [:θ, :objective]
     )
     state = GradientState(init_θ, objective(init_θ), gradient(init_θ))
     langevin_diffusion(
-        state; objective, gradient, step_size, ξ, n_steps, collect_data
+        state; objective, gradient, step_size, n_steps, collect_data
         )
 end
