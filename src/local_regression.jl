@@ -154,6 +154,3 @@ function glm_local_Σ(;
     end
     Σ
 end
-
-
-# TODO Check if things work with a vector of summary statistics
