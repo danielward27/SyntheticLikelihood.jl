@@ -112,13 +112,17 @@ Struct that contains the estimated local properties of Σ (the covariance matrix
 of the summary statistics).
 
 # Fields
-- Σ The expected value of the diagonal covariance matrix (of summary
-    statistics). A vector of length n_sum_stats.
-- ∂ The first derivitives of Σ, of dimension (n_s × n_s × n_θ).
+- Σ The (nₛ×nₛ) (estimated) covariance matrix of the summary statistics.
+- ∂ The (nₛ×nₛ×n_θ) matrix of estimated first derivitives of Σ.
 """
 struct LocalΣ
-    Σ::Vector{Float64}
+    Σ::Array{Float64, 2}
     ∂::Array{Float64, 3}
+
+    function LocalΣ(Σ, ∂)
+        @assert size(Σ) == size(∂)[1:2]
+        new(Σ, ∂)
+    end
 end
 
 
@@ -142,14 +146,14 @@ function glm_local_Σ(;
     θ = hcat(ones(size(θ, 1)), θ)  # Bias
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
-    Σ = LocalΣ(Vector{Float64}(undef, n),
+    Σ = LocalΣ(Array{Float64}(undef, n, n),
                Array{Float64}(undef, n, n, N))
 
     for j in 1:n
         coefs = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
         ϕ = coefs[1]
         v = coefs[2:end]
-        Σ.Σ[j] = exp(ϕ)
+        Σ.Σ[j, j] = exp(ϕ)
         Σ.∂[j, j, :] = v.*exp(ϕ)
     end
     Σ
