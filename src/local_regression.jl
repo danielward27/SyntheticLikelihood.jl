@@ -146,7 +146,7 @@ function glm_local_Σ(;
     θ = hcat(ones(size(θ, 1)), θ)  # Bias
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
-    Σ = LocalΣ(Array{Float64}(undef, n, n),
+    Σ = LocalΣ(cov(ϵ),  # Initialize with rough estimate
                Array{Float64}(undef, n, n, N))
 
     for j in 1:n
