@@ -45,6 +45,13 @@ s = simulate_n_s(θ; simulator, summary=identity)
 @test isapprox(get_residuals(μ), fill(0., size(s)); atol = 1e-10)
 
 
+# Check regression works with summary vector length 1
+s = s[:, 1]
+s = reshape(s, 100, 1)
+μ = quadratic_local_μ(;θ_orig, θ, s)
+
+@test isapprox(μ[1].μ, 2)
+
 ## Second regression
 
 # Diagonal values of Dᵢ=ϵᵢϵᵢᵀ matrix is just ϵ² for each sum stat

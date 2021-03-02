@@ -38,15 +38,6 @@ function pairwise_combinations(n::Integer)
 end
 
 
-## For testing:
-
-# Deterministic simulator for testing
-function deterministic_test_simulator(θ::AbstractVector{Float64})
-    @assert length(θ) == 2
-    [θ[1], θ[1]*θ[2], θ[2]^2]
-end
-
-
 """
 Stacks a vector of consitently sized arrays to make a new array with
 dimensions (length(x), dim(x[1])...).
@@ -62,4 +53,12 @@ function stack_arrays(x::Vector)
         d[i, colons...] = x[i]
     end
     return d
+end
+
+
+## For testing:
+# Deterministic simulator for testing
+function deterministic_test_simulator(θ::AbstractVector{Float64})
+    @assert length(θ) == 2
+    [θ[1], θ[1]*θ[2], θ[2]^2]
 end

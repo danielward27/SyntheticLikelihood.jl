@@ -72,9 +72,13 @@ function quadratic_local_μ(;
     θ = θ .- θ_orig'
     θ, combinations = quadratic_design_matrix(θ)
 
-    d = size(s)[2]
-    μ = Vector{Localμ}(undef, d)
+    if s isa Vector
+        d = 1
+    else
+        d = size(s)[2]
+    end
 
+    μ = Vector{Localμ}(undef, d)
     for i in 1:d
        β, ŝ = linear_regression(θ, s[:, i])
 
