@@ -39,10 +39,4 @@ plot(contours, points)
 To implement a new sampler, each sampler must:
 - Be a subtype of `AbstractSampler`.
 - Have a `get_init_state` method, which returns a SamplerState object given `init_θ` e.g. with signature `get_init_state(sampler::MySampler, init_θ::Vector{Float64})`.
-- Have an `update!` method, taking the sampler and the `SamplerState` object `update!(sampler::MySampler, state::SamplerState)`.
-
-- Each sampler must be a subtype of `AbstractSampler`.
-
-
-have an the following methods`update!` method, where the
-function update!(sampler::Langevin, state::SamplerState)
+- Have an `update!` method, taking the sampler and the `SamplerState` object `update!(sampler::MySampler, state::SamplerState)`. This updates the state (parameters, gradients etc, and sampler object if applicable).
