@@ -31,8 +31,8 @@ export glm_local_Σ
 
 # Samplers
 export Langevin
+export PreconditionedLangevin
 export run_sampler!
-export SamplerState
 
 # utils
 export peturb
