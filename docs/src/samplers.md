@@ -1,13 +1,14 @@
-# Sampling
+# Samplers
 To sample from a distribution, first a sampler object should be created. This defines the hyperparameters of the sampler, the objective function and the gradient/hessian if appropriate. When passing a function (objective/gradient/hessian) to a sampler, it should take a parameter vector θ as its first and only required argument. The aim should be to explore around the minima of the function, so the objective could be the negative log-posterior, for example.
 
 The sampler object can then passed to `run_sampler!`, to sample from the distribution.
 
+The currently available samplers are shown below:
 
-Currently available samplers are:
-- `Langevin` which uses the update θ = θ .- η ./ 2 .* ∇ .+ ξ
-    where η is the step size, ∇ the gradient, and ξ is `MvNormal(η)`.
-- `PreconditionedLangevin` which uses the update θ = θ - H⁻¹ * η/2 * ∇ .+ ξ
+```@docs
+Langevin
+PreconditionedLangevin
+```
 
 Below is an example to sample from a multivariate normal density using the discretized langevin diffusion (Unadjusted Langevin Algorithm).
 

@@ -1,5 +1,4 @@
 # Contains general functoins for the simulation interface
-
 """
 Simulates summary statistics from the model under a fixed parameter vector.
 `n_sim` is specified as the number of simulations. Simulations can be run on
