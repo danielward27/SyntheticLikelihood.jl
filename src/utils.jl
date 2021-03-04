@@ -1,4 +1,3 @@
-# utility functions
 
 """
 Peturb a vector using a user specified distribution (often MVN zero mean).

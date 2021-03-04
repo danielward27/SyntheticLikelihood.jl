@@ -1,4 +1,3 @@
-# Samplers to explore the likelihood
 
 """
 Struct for containing the state of sampler at a particular iteration.

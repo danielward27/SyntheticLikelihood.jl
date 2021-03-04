@@ -21,21 +21,13 @@ export simulate_n_s
 export synthetic_likelihood
 
 # local regression
-export quadratic_design_matrix
-export linear_regression
-export Localμ
-export quadratic_local_μ
-export get_residuals
-export LocalΣ
-export glm_local_Σ
+export quadratic_design_matrix, linear_regression, Localμ, quadratic_local_μ,
+ get_residuals, LocalΣ, glm_local_Σ
 
 # Samplers
-export Langevin
-export PreconditionedLangevin
-export run_sampler!
+export Langevin, PreconditionedLangevin, run_sampler!
 
 # utils
 export peturb
-export pairwise_combinations
 
 end

@@ -1,4 +1,3 @@
-# Evaluate likelihood (and its gradient/hessian)
 
 """
 Evaluates synthetic likelhood of observed data for a fixed parameter vector

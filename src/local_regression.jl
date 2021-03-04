@@ -130,10 +130,14 @@ end
 Use a gamma distributed GLM with log link function to estimate the local properties
     of Σ. θ should not have a bias term (added internally).
 
+Specifically, this function:
+- Creates a rough initial Σ estimate using `cov(ϵ)`.
+- Estimates the diagonal elements of Σ, and ∂Σⱼⱼ using local regression.
+
 # Arguments
 - `θ_orig::AbstractVector`  Original θ (used for centering).
 - `θ::AbstractMatrix` Peturbed θ from local area.
-- `ϵ::AbstractMatrix` Residuals from quadratic regression.
+- `ϵ::AbstractMatrix` Residuals from quadratic regression (n_sim × n_sumstats).
 """
 function glm_local_Σ(;
     θ_orig::AbstractVector,
