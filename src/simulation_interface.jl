@@ -2,7 +2,7 @@
 """
 Simulates summary statistics from the model under a fixed parameter vector.
 `n_sim` is specified as the number of simulations. Simulations can be run on
-multiple threads using `parallel = true`. By defualt no summary statistic function
+multiple threads using `parallel = false`. By defualt no summary statistic function
 is used (by passing the `identity` function).
 
 $(SIGNATURES)
@@ -14,7 +14,7 @@ $(SIGNATURES)
 - `n_sim::Integer` Number of simulations.
 - `simulator_kwargs` Kwargs passed to simulator.
 - `summary_kwargs` Kwargs passed to summary.
-- `parallel::Bool = true` Whether to run on multiple threads.
+- `parallel::Bool = false` Whether to run on multiple threads.
 """
 function simulate_n_s(
     θ::AbstractVector;
