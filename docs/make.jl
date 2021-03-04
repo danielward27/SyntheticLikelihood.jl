@@ -17,8 +17,7 @@ makedocs(;
         "Home" => "index.md",
         "Simulation interface" => "simulation_interface.md",
         "Local regression" => "local_regression.md",
-        "Samplers" => "samplers.md",
-        "All functions" => "full_function_list.md"
+        "Samplers" => "samplers.md"
     ],
 )
 
