@@ -2,6 +2,8 @@
 """
 Struct for containing the state of sampler at a particular iteration.
     Gradient and hessian are `missing` unless specified.
+
+    $(FIELDS)
 """
 Base.@kwdef mutable struct SamplerState
     θ::AbstractVector{Float64}
@@ -18,6 +20,7 @@ Function initialises a named tuple containing Vectors with undefined values.
 Used with samplers to store results. State just provides an "example" state
 from which to infer types of vectors in the array. Names of the named tuple
 are the symbols provided.
+
 """
 function init_data_tuple(
     state::SamplerState,
@@ -75,7 +78,7 @@ Sampler object for Langevin diffusion. Uses a discrete time Euler approximation 
 the Langevin diffusion (unadjusted Langevin algorithm), given by the update
 θ := θ - η/2 * ∇ + ξ, where ξ is given by N(0, ηI).
 
-$(SIGNATURES)
+$(FIELDS)
 """
 Base.@kwdef mutable struct Langevin <: AbstractSampler
     step_size::Float64
@@ -112,7 +115,7 @@ Sampler object for Preconditioned Langevin diffusion. Also can be thought of as
     a stochastic newton method. Uses the update:
     θ := θ - η/2 * H⁻¹*∇ + ξ, where ξ ∼ N(0, ηH⁻¹).
 
-    $(SIGNATURES)
+    $(FIELDS)
 """
 Base.@kwdef mutable struct PreconditionedLangevin <: AbstractSampler
     step_size::Float64
