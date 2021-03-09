@@ -8,7 +8,7 @@ Langevin
 PreconditionedLangevin
 ```
 
-This defines the hyperparameters of the sampler, the objective function and the gradient/hessian if appropriate. When passing a function (objective/gradient/hessian) to a sampler, it should take a parameter vector θ as its first and only required argument. The aim should be to explore around the minima of the function, so the objective could be the negative log-posterior, for example.
+The sampler object defines the hyperparameters of the sampler, the objective function and the gradient/hessian if appropriate. When passing a function (objective/gradient/hessian) to a sampler, it should take a parameter vector θ as its first and only required argument. The aim should be to explore around the minima of the function, so the objective could be the negative log-posterior, for example.
 
 The sampler object can then passed to `run_sampler!`, to sample from the distribution:
 ```@docs

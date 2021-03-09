@@ -111,7 +111,7 @@ end
 Struct that contains the estimated local properties of Σ (the covariance matrix
 of the summary statistics).
 
-# Fields
+$(FIELDS)
 - Σ The (nₛ×nₛ) (estimated) covariance matrix of the summary statistics.
 - ∂ The (nₛ×nₛ×n_θ) matrix of estimated first derivitives of Σ.
 """
@@ -134,6 +134,8 @@ Specifically, this function:
 - Creates a rough initial Σ estimate using `cov(ϵ)`.
 - Estimates the diagonal elements of Σ, and ∂Σⱼⱼ using local regression.
 
+$(SIGNATURES)
+
 # Arguments
 - `θ_orig::AbstractVector`  Original θ (used for centering).
 - `θ::AbstractMatrix` Peturbed θ from local area.
@@ -153,6 +155,7 @@ function glm_local_Σ(;
     Σ = LocalΣ(cov(ϵ),  # Initialize with rough estimate
                Array{Float64}(undef, n, n, N))
 
+    # Improve estimates along diagonals
     for j in 1:n
         coefs = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
         ϕ = coefs[1]
@@ -161,4 +164,13 @@ function glm_local_Σ(;
         Σ.∂[j, j, :] = v.*exp(ϕ)
     end
     Σ
+end
+
+
+"""
+Improve estimate of localΣ from glm_local_μ. This is steps 4.5 and 4.6 in Algorithm 2 in
+Statistical Methods for Complex Population Dynamics (Matteo Fasiolo's PhD thesis).
+"""
+function refine_local_Σ(Local)
+    error("unimplemented")
 end
