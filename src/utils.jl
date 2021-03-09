@@ -14,28 +14,6 @@ function peturb(θ::AbstractVector, d::Sampleable, n::Integer = 1)
     (rand(d, n) .+ θ)'
 end
 
-"""
-Pairwise combinations. Useful for getting the combinations in quadratic
-regression, or the indices of a triangular matrix. `n=5` would return all the
-pairwise combinations between 1:5 (including matched terms e.g. [1,1]).
-
-$(SIGNATURES)
-
-"""
-function pairwise_combinations(n::Integer)
-    n_combinations = binomial(n, 2) + n
-    combinations = Matrix{Int64}(undef, n_combinations, 2)
-
-    row = 1
-    for i in 1:n for j in i:n
-        combinations[row, :] = [i, j]
-        row += 1
-    end end
-
-    combinations
-end
-
-
 
 """
 Stacks a vector of consitently sized arrays to make a new array with

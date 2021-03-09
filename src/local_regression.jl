@@ -9,11 +9,11 @@ $(SIGNATURES)
 """
 function quadratic_design_matrix(X::AbstractMatrix)
     X = [ones(size(X, 1)) X]  # Bias
-    combinations = pairwise_combinations(size(X, 2))
+    combinations = [(i,j) for i in 1:size(X, 2) for j in i:size(X, 2)]
     result = Matrix{Float64}(undef, size(X, 1), size(combinations, 1))
 
     # A bit naive so could be sped up but neat.
-    for (i, idxs) in enumerate(eachrow(combinations))
+    for (i, idxs) in enumerate(combinations)
         result[:, i] = X[:, idxs[1]] .* X[:, idxs[2]]
     end
     result, combinations
@@ -85,8 +85,8 @@ function quadratic_local_μ(;
        # Convert β to matrix
        β_mat = Matrix{Float64}(undef, length(θ_orig) + 1, length(θ_orig) + 1)
 
-       for (i, row) in enumerate(eachrow(combinations))
-           β_mat[row[1], row[2]] = β[i]  # Upper traingular
+       for (i, idxs) in enumerate(combinations)
+           β_mat[idxs...] = β[i]  # Upper traingular
        end
 
        β_mat = Symmetric(β_mat)
