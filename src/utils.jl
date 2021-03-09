@@ -15,7 +15,8 @@ function peturb(θ::AbstractVector, d::Sampleable, n::Integer = 1)
 end
 
 """
-Pairwise combinations (for quadratic regression). `n=5` would return all the
+Pairwise combinations. Useful for getting the combinations in quadratic
+regression, or the indices of a triangular matrix. `n=5` would return all the
 pairwise combinations between 1:5 (including matched terms e.g. [1,1]).
 
 $(SIGNATURES)
@@ -24,17 +25,16 @@ $(SIGNATURES)
 function pairwise_combinations(n::Integer)
     n_combinations = binomial(n, 2) + n
     combinations = Matrix{Int64}(undef, n_combinations, 2)
+
     row = 1
-    for i in 1:n
-        j = 1
-        while j <= i
-            combinations[row, :] = [j, i]
-            row += 1
-            j +=1
-        end
-    end
+    for i in 1:n for j in i:n
+        combinations[row, :] = [i, j]
+        row += 1
+    end end
+
     combinations
 end
+
 
 
 """

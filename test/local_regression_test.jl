@@ -3,7 +3,8 @@ using SyntheticLikelihood, Test, LinearAlgebra, Distributions, Random
 Random.seed!(1)
 
 X = [1 2; 4 3]
-expected_result = [1 1 1 2 2 4; 1 4 16 3 12 9]
+
+expected_result = [1 1 2 1 2 4; 1 4 3 16 12 9]
 @test quadratic_design_matrix(X)[1] == expected_result
 
 ## Quadratic regression should be able to represent true quadratic perfectly
