@@ -146,14 +146,14 @@ function glm_local_Σ(;
     θ::AbstractMatrix,
     ϵ::AbstractMatrix)
 
-    n = size(ϵ, 2)
-    N = length(θ_orig)
+    nₛ = size(ϵ, 2)
+    n_θ = length(θ_orig)
     θ = θ .- θ_orig'  # Center
     θ = hcat(ones(size(θ, 1)), θ)  # Bias
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
     Σ = LocalΣ(cov(ϵ),  # Initialize with rough estimate
-               Array{Float64}(undef, n, n, N))
+               Array{Float64}(undef, nₛ, nₛ, n_θ))
 
     # Improve estimates along diagonals
     for j in 1:n
