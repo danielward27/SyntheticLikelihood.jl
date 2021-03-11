@@ -76,12 +76,58 @@ end
 
 ϵ² = [test_residuals(; ϵ²_model_1...) test_residuals(; ϵ²_model_2...)]
 
+
 Σ = glm_local_Σ(; θ_orig, θ, ϵ = sqrt.(ϵ²))
+
 
 # GLM coefficients ≈ paramters of ϵ² model
 Σⱼⱼ = diag(Σ.Σ)
 @test isapprox(ϵ²_model_1.ϕ, log(Σⱼⱼ[1]); atol = 0.1)
 @test isapprox(ϵ²_model_2.ϕ, log(Σⱼⱼ[2]); atol = 0.1)
 
-@test isapprox(Σ.∂[1,1,:]./Σⱼⱼ[1], ϵ²_model_1.v; atol = 0.2)
-@test isapprox(Σ.∂[2,2,:]./Σⱼⱼ[2], ϵ²_model_2.v; atol = 0.2)
+@test isapprox(Σ.∂[1,1,:]./Σⱼⱼ[1], ϵ²_model_1.v; atol = 0.1)
+@test isapprox(Σ.∂[2,2,:]./Σⱼⱼ[2], ϵ²_model_2.v; atol = 0.1)
+
+
+
+## Test glm_local_Σ using known expected values and gradients
+
+# Make artificial example
+seed = MersenneTwister(1)
+∂ = Array{Float64}(undef, 3, 3, 2)
+
+function rand_pd(seed)
+        A = randn(seed, 3,3); A = A'*A; A = (A + A')/2
+end
+
+∂[:, :, 1] = rand_pd(seed)
+∂[:, :, 2] = rand_pd(seed)
+
+true_Σ = LocalΣ(Symmetric(rand_pd(seed)+ 100I), ∂)
+
+# Simulate residuals under this model
+θ = [randn(seed, 100000) randn(seed, 100000)]
+
+ϵ = Array{Float64}(undef, size(θ, 1), size(true_Σ.Σ, 1))
+for i in 1:size(ϵ, 1)
+        Σ = true_Σ.Σ + true_Σ.∂[:, :, 1].*θ[i, 1] + true_Σ.∂[:, :, 2].*θ[i, 2]
+        ϵ[i, :] = rand(seed, MvNormal(Σ))
+end
+
+estimted_Σ = glm_local_Σ(; θ_orig = zeros(size(θ, 2)), θ, ϵ)
+sample_Σ = cov(ϵ)
+
+# Compare sample covariance to estimated covariance
+norm(sample_Σ - true_Σ.Σ)
+norm(estimted_Σ.Σ - true_Σ.Σ)
+
+# Are the diagonal elements improved?
+norm(diag(sample_Σ) - diag(true_Σ.Σ))
+norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
+
+# Sometimes does worse, sometimes does better.
+
+# Check gradient estimates are improved compared to assuming 0
+@test norm(estimted_Σ.∂ - true_Σ.∂) < norm(true_Σ.∂)
+
+# Off diagonal gradients aren't estimated very well (which is expected).

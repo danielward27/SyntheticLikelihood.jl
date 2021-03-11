@@ -116,7 +116,7 @@ $(FIELDS)
 - ∂ The (nₛ×nₛ×n_θ) matrix of estimated first derivitives of Σ.
 """
 struct LocalΣ
-    Σ::Array{Float64, 2}
+    Σ::Symmetric{Float64}
     ∂::Array{Float64, 3}
 
     function LocalΣ(Σ, ∂)
@@ -128,11 +128,15 @@ end
 
 """
 Use a gamma distributed GLM with log link function to estimate the local properties
-    of Σ. θ should not have a bias term (added internally).
+    of the covariance matrix of the statistics Σ.  θ should not have a bias term (added internally).
 
 Specifically, this function:
 - Creates a rough initial Σ estimate using `cov(ϵ)`.
-- Estimates the diagonal elements of Σ, and ∂Σⱼⱼ using local regression.
+- Estimates the diagonal elements Σⱼⱼ, and ∂Σⱼⱼ using local regression.
+- Esimates off-diagonal elements of Σ by scaling the sample correlation matrix
+    with √Σⱼⱼ (standard deviations).
+- Esimate off-diagonal gradients ∂Σᵢⱼ by averaging the coefficients associated
+with indices i and j.
 
 $(SIGNATURES)
 
@@ -152,25 +156,28 @@ function glm_local_Σ(;
     θ = hcat(ones(size(θ, 1)), θ)  # Bias
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
-    Σ = LocalΣ(cov(ϵ),  # Initialize with rough estimate
-               Array{Float64}(undef, nₛ, nₛ, n_θ))
+    samp_Σ = cov(ϵ)
+    samp_Ψ = Diagonal(samp_Σ)^-0.5 * samp_Σ * Diagonal(samp_Σ)^-0.5  # cor
 
-    # Improve estimates along diagonals
-    for j in 1:n
-        coefs = coef(glm(θ, ϵ²[:, j], Gamma(), LogLink()))  # TODO: Add weights?
-        ϕ = coefs[1]
-        v = coefs[2:end]
-        Σ.Σ[j, j] = exp(ϕ)
-        Σ.∂[j, j, :] = v.*exp(ϕ)
+    # Get coefficients of GLM
+    coefs = Array{Float64}(undef, nₛ, n_θ+1)
+    for i in 1:nₛ
+        coefs[i, :] = coef(glm(θ, ϵ²[:, i], Gamma(), LogLink()))  # TODO: Add weights?
     end
-    Σ
-end
 
+    ϕ = coefs[:, 1]  # exp(ϕ) gives variance estimates
+    v = coefs[:, 2:end]
 
-"""
-Improve estimate of localΣ from glm_local_μ. This is steps 4.5 and 4.6 in Algorithm 2 in
-Statistical Methods for Complex Population Dynamics (Matteo Fasiolo's PhD thesis).
-"""
-function refine_local_Σ(Local)
-    error("unimplemented")
+    # Estimate the gradients
+    ∂ = Array{Float64}(undef, nₛ, nₛ, n_θ)
+    for i in 1:nₛ for j in 1:nₛ  # upper traingular
+        ∂[i, j, :] = ∂[j, i, :] =
+         samp_Ψ[i, j] * exp((ϕ[i] + ϕ[j])/2) .* ((v[i, :] .+ v[j, :])/2)
+    end end
+
+    # Estimate covariance matrix
+    sds = Diagonal(exp.(ϕ/2))
+    Σ = sds * samp_Ψ * sds
+
+    LocalΣ(Symmetric(Σ), ∂)
 end
