@@ -37,23 +37,22 @@ end
 Struct that contains the estimated local properties of μ.
 
 # Fields
-- `μ::Float64` Mean of the summary statistic.
-- `∂::Vector{Float64}` First derivitive w.r.t. parameters.
-- `∂²::Matrix{Float64}` Second derivitive w.r.t. parameters.
-- `ϵ::Vector{Float64}` Residuals.
+- `μ::Float64` Means of the summary statistics.
+- `∂::Vector{Float64}` First derivitives w.r.t. parameters (nₛ×n_θ).
+- `∂²::Matrix{Float64}` Second derivitive w.r.t. parameters (nₛ×n_θ×n_θ).
+- `ϵ::Vector{Float64}` Residuals of predicted summary statistics (nₛ×nₛᵢₘ).
 """
 struct Localμ
-    μ::Float64
-    ∂::Vector{Float64}
-    ∂²::Matrix{Float64}
-    ϵ::Vector{Float64}
+    μ::Vector{Float64}
+    ∂::Matrix{Float64}
+    ∂²::Array{Float64, 3}
+    ϵ::Matrix{Float64}
 end
 
 """
 Finds the local behaviour of the summary statistic mean μ.
 Uses quadratic linear regression to approximate the mean, gradient and
-hessian around `θ_orig`. Returns a vector of `Localμ` structs (see above),
-with length equal to the number of summary statistics.
+hessian around `θ_orig`. Returns a `Localμ` struct (see above).
 
 $(SIGNATURES)
 
@@ -64,22 +63,29 @@ $(SIGNATURES)
 """
 function quadratic_local_μ(;
     θ_orig::AbstractVector,
-    θ::AbstractArray,
-    s::AbstractArray)
+    θ::AbstractMatrix,
+    s::AbstractMatrix)
     @assert size(θ, 1) == size(s, 1)
+
+    if s isa Vector
+        nₛ = 1
+    else
+        nₛ = size(s, 2)
+    end
+
+    n_θ = size(θ, 2)
+    nₛᵢₘ = size(θ, 1)
+
+    μ = Vector{Float64}(undef, nₛ)
+    ∂ = Matrix{Float64}(undef, nₛ, n_θ)
+    ∂² = Array{Float64}(undef, nₛ, n_θ, n_θ)
+    ϵ = Matrix{Float64}(undef, nₛᵢₘ, nₛ)
 
     # Center and carry out quadratic regression for each s
     θ = θ .- θ_orig'
     θ, combinations = quadratic_design_matrix(θ)
 
-    if s isa Vector
-        d = 1
-    else
-        d = size(s)[2]
-    end
-
-    μ = Vector{Localμ}(undef, d)
-    for i in 1:d
+    for i in 1:nₛ
        β, ŝ = linear_regression(θ, s[:, i])
 
        # Convert β to matrix
@@ -90,20 +96,12 @@ function quadratic_local_μ(;
        end
 
        β_mat = Symmetric(β_mat)
-       μ[i] = Localμ(β_mat[1,1], β_mat[2:end, 1],
-                     β_mat[2:end, 2:end], ŝ-s[:, i])
+       μ[i] = β_mat[1,1]
+       ∂[i, :] = β_mat[2:end, 1]
+       ∂²[i, :, :] = β_mat[2:end, 2:end]
+       ϵ[:, i] = ŝ-s[:, i]
     end
-    μ
-end
-
-
-"""
-Get an array of residuals from a vector of Localμ structs.
-Returns (length of residuals × number of summary stats) matrix
-"""
-function get_residuals(μ_vec::Vector{Localμ})
-    vecvec = [μ.ϵ for μ in μ_vec]
-    reduce(hcat, vecvec)
+    Localμ(μ, ∂, ∂², ϵ)
 end
 
 

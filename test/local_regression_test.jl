@@ -32,26 +32,23 @@ s = simulate_n_s(θ; simulator, summary=identity)
 μ = quadratic_local_μ(;θ_orig, θ, s)
 
 # Test means
-@test isapprox(μ[1].μ, 2)
-@test isapprox(μ[2].μ, 10)
-@test isapprox(μ[3].μ, 25)
+@test isapprox(μ.μ, [2,10,25])
 
 # Test first and second derivitives
-@test isapprox(μ[1].∂[1], 1)
-@test isapprox(μ[3].∂²[2,2], 1)
-@test isapprox(μ[3].∂²[1,2], 0, atol = 1e-10)
+@test isapprox(μ.∂[1, 1], 1)
+@test isapprox(μ.∂²[3,2,2], 1)
+@test isapprox(μ.∂²[3, 1,2], 0, atol = 1e-10)
 
 # Residuals should all be zero as deterministic quadratic example
-@test get_residuals(μ) == [μ[1].ϵ'; μ[2].ϵ'; μ[3].ϵ']'
-@test isapprox(get_residuals(μ), fill(0., size(s)); atol = 1e-10)
+@test isapprox(μ.ϵ, fill(0., size(s)); atol = 1e-10)
 
 
 # Check regression works with summary vector length 1
 s = s[:, 1]
 s = reshape(s, 100, 1)
 μ = quadratic_local_μ(;θ_orig, θ, s)
-
-@test isapprox(μ[1].μ, 2)
+@test isapprox(μ.μ[1], 2)
+@test size(μ.∂²) == (1,2,2)
 
 ## Second regression
 @test_throws AssertionError LocalΣ(fill(1, 3, 3), fill(1, 3, 2, 10))
@@ -110,8 +107,8 @@ true_Σ = LocalΣ(Symmetric(rand_pd(seed)+ 100I), ∂)
 
 ϵ = Array{Float64}(undef, size(θ, 1), size(true_Σ.Σ, 1))
 for i in 1:size(ϵ, 1)
-        Σ = true_Σ.Σ + true_Σ.∂[:, :, 1].*θ[i, 1] + true_Σ.∂[:, :, 2].*θ[i, 2]
-        ϵ[i, :] = rand(seed, MvNormal(Σ))
+        model_Σ = true_Σ.Σ + true_Σ.∂[:, :, 1].*θ[i, 1] + true_Σ.∂[:, :, 2].*θ[i, 2]
+        ϵ[i, :] = rand(seed, MvNormal(model_Σ))
 end
 
 estimted_Σ = glm_local_Σ(; θ_orig = zeros(size(θ, 2)), θ, ϵ)

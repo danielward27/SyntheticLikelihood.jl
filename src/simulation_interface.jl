@@ -20,7 +20,7 @@ function simulate_n_s(
     θ::AbstractVector;
     simulator::Function,
     summary::Function = identity,
-    n_sim::Integer,
+    n_sim::Integer = 1,
     simulator_kwargs = Dict(),
     summary_kwargs = Dict(),
     parallel::Bool = false
