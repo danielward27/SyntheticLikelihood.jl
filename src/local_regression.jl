@@ -52,17 +52,17 @@ end
 """
 Finds the local behaviour of the summary statistic mean μ.
 Uses quadratic linear regression to approximate the mean, gradient and
-hessian around `θ_orig`. Returns a `Localμ` struct (see above).
+hessian around `θᵢ`. Returns a `Localμ` struct (see above).
 
 $(SIGNATURES)
 
 # Arguments
-- `θ_orig::AbstractVector` Original θ.
+- `θᵢ::AbstractVector` Original θ.
 - `θ::AbstractMatrix` Peturbed θ (sampled from local area).
 - `s::AbstractMatrix` Corresponding summary statistics to θ.
 """
 function quadratic_local_μ(;
-    θ_orig::AbstractVector,
+    θᵢ::AbstractVector,
     θ::AbstractMatrix,
     s::AbstractMatrix)
     @assert size(θ, 1) == size(s, 1)
@@ -82,14 +82,14 @@ function quadratic_local_μ(;
     ϵ = Matrix{Float64}(undef, nₛᵢₘ, nₛ)
 
     # Center and carry out quadratic regression for each s
-    θ = θ .- θ_orig'
+    θ = θ .- θᵢ'
     θ, combinations = quadratic_design_matrix(θ)
 
     for i in 1:nₛ
        β, ŝ = linear_regression(θ, s[:, i])
 
        # Convert β to matrix
-       β_mat = Matrix{Float64}(undef, length(θ_orig) + 1, length(θ_orig) + 1)
+       β_mat = Matrix{Float64}(undef, length(θᵢ) + 1, length(θᵢ) + 1)
 
        for (i, idxs) in enumerate(combinations)
            β_mat[idxs...] = β[i]  # Upper traingular
@@ -139,18 +139,18 @@ with indices i and j.
 $(SIGNATURES)
 
 # Arguments
-- `θ_orig::AbstractVector`  Original θ (used for centering).
+- `θᵢ::AbstractVector`  Original θ (used for centering).
 - `θ::AbstractMatrix` Peturbed θ from local area.
 - `ϵ::AbstractMatrix` Residuals from quadratic regression (n_sim × n_sumstats).
 """
 function glm_local_Σ(;
-    θ_orig::AbstractVector,
+    θᵢ::AbstractVector,
     θ::AbstractMatrix,
     ϵ::AbstractMatrix)
 
     nₛ = size(ϵ, 2)
-    n_θ = length(θ_orig)
-    θ = θ .- θ_orig'  # Center
+    n_θ = length(θᵢ)
+    θ = θ .- θᵢ'  # Center
     θ = hcat(ones(size(θ, 1)), θ)  # Bias
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
@@ -182,20 +182,33 @@ end
 
 
 """
-Log-synthetic likelihood, and its gradient and hessian.
+Estimate log-synthetic likelihood, and its gradient and hessian.
+$(SIGNATURES)
 
-$(FIELDS)
+## Arguments
+- `θᵢ` -
+- `s_true`
+- `simulator`
+- `summary`
+- `P::Sampleable`
+- `n_sim::Integer`
+
 """
-struct LocalSyntheticLikelihood
-    "Negative log-likelihood (-l(θ))"
-    objective::Float64
-    "Gradient of -l(θ)"
-    gradient::Vector{Float64}
-    "Hessian of -l(θ)"
-    hessian::Matrix{Float64}
+function local_synthetic_likelihood(;
+  θᵢ::Vector{Float64}, s_true::Vector{Float64},
+  simulator::Function, summary::Function=identity,
+  P::Sampleable, n_sim::Integer
+  )
+  θ = peturb(θᵢ, P, n_sim)
+  s = simulate_n_s(θ; simulator, summary)
+  μ = quadratic_local_μ(; θᵢ, θ, s)
+  Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
+  l = local_synthetic_likelihood(μ, Σ, s_true)
+  return l
 end
 
-function LocalSyntheticLikelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64})
+
+function local_synthetic_likelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64})
   n_θ = size(μ.∂, 2)
   ∂ = Vector{Float64}(undef, n_θ)
   ∂² = Matrix{Float64}(undef, n_θ, n_θ)
@@ -227,20 +240,5 @@ function LocalSyntheticLikelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64
   mvn = MvNormal(μ.μ, Σ.Σ)
   l = logpdf(mvn, sᵒ)
 
-  return LocalSyntheticLikelihood(-l, -∂, -∂²)
-end
-
-
-function LocalSyntheticLikelihood(;
-  θ_orig::Vector{Float64}, s_true::Vector{Float64},
-  simulator::Function, summary::Function=identity,
-  P::Sampleable, n_sim::Integer
-  )
-
-  θ = peturb(θ_orig, P, n_sim)
-  s = simulate_n_s(θ; simulator, summary)
-  μ = quadratic_local_μ(; θ_orig, θ, s)
-  Σ = glm_local_Σ(; θ_orig, θ, μ.ϵ)
-  l = LocalSyntheticLikelihood(μ, Σ, s_true)
-  return l
+  return LocalApproximation(-l, -∂, -∂²)
 end

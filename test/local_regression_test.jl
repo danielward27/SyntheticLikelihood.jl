@@ -24,12 +24,11 @@ X, combinations = quadratic_design_matrix(X)
 
 simulator = SyntheticLikelihood.deterministic_test_simulator
 
-θ_orig = [2.0, 5]
-P = MvNormal(length(θ_orig), 2)
-θ = peturb(θ_orig, P, 100)
+θᵢ = [2.0, 5]
+P = MvNormal(length(θᵢ), 2)
+θ = peturb(θᵢ, P, 100)
 s = simulate_n_s(θ; simulator, summary=identity)
-
-μ = quadratic_local_μ(;θ_orig, θ, s)
+μ = quadratic_local_μ(;θᵢ, θ, s)
 
 # Test means
 @test isapprox(μ.μ, [2,10,25])
@@ -46,7 +45,7 @@ s = simulate_n_s(θ; simulator, summary=identity)
 # Check regression works with summary vector length 1
 s = s[:, 1]
 s = reshape(s, 100, 1)
-μ = quadratic_local_μ(;θ_orig, θ, s)
+μ = quadratic_local_μ(;θᵢ, θ, s)
 @test isapprox(μ.μ[1], 2)
 @test size(μ.∂²) == (1,2,2)
 
@@ -63,9 +62,9 @@ function test_residuals(;ϕ, v, θ)
     ϵ²
 end
 
-θ_orig = [1., 2, 3]
-θ = peturb(θ_orig, MvNormal(3, 1), 1000)
-θ_centered = θ .- θ_orig'
+θᵢ = [1., 2, 3]
+θ = peturb(θᵢ, MvNormal(3, 1), 1000)
+θ_centered = θ .- θᵢ'
 
 # ϵ² model kwargs for two summary statistics
 ϵ²_model_1 = (ϕ = 0.1, v = [0.1, 0.2, 0.3], θ = θ_centered)
@@ -74,7 +73,7 @@ end
 ϵ² = [test_residuals(; ϵ²_model_1...) test_residuals(; ϵ²_model_2...)]
 
 
-Σ = glm_local_Σ(; θ_orig, θ, ϵ = sqrt.(ϵ²))
+Σ = glm_local_Σ(; θᵢ, θ, ϵ = sqrt.(ϵ²))
 
 
 # GLM coefficients ≈ paramters of ϵ² model
@@ -111,7 +110,7 @@ for i in 1:size(ϵ, 1)
         ϵ[i, :] = rand(seed, MvNormal(model_Σ))
 end
 
-estimted_Σ = glm_local_Σ(; θ_orig = zeros(size(θ, 2)), θ, ϵ)
+estimted_Σ = glm_local_Σ(; θᵢ = zeros(size(θ, 2)), θ, ϵ)
 sample_Σ = cov(ϵ)
 
 # Compare sample covariance to estimated covariance
