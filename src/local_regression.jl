@@ -187,9 +187,12 @@ Log-synthetic likelihood, and its gradient and hessian.
 $(FIELDS)
 """
 struct LocalSyntheticLikelihood
-    l::Float64
-    ∂::Vector{Float64}
-    ∂²::Matrix{Float64}
+    "Negative log-likelihood (-l(θ))"
+    objective::Float64
+    "Gradient of -l(θ)"
+    gradient::Vector{Float64}
+    "Hessian of -l(θ)"
+    hessian::Matrix{Float64}
 end
 
 function LocalSyntheticLikelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64})
@@ -224,7 +227,7 @@ function LocalSyntheticLikelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64
   mvn = MvNormal(μ.μ, Σ.Σ)
   l = logpdf(mvn, sᵒ)
 
-  return LocalSyntheticLikelihood(l, ∂, ∂²)
+  return LocalSyntheticLikelihood(-l, -∂, -∂²)
 end
 
 

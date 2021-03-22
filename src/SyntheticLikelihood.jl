@@ -22,7 +22,7 @@ export synthetic_likelihood
 
 # local regression
 export quadratic_design_matrix, linear_regression, Localμ, quadratic_local_μ,
- get_residuals, LocalΣ, glm_local_Σ, LocalSyntheticLikelihood
+ get_residuals, LocalΣ, glm_local_Σ, LocalSyntheticLikelihood, LocalApproximation
 
 # Samplers
 export Langevin, PreconditionedLangevin, run_sampler!
