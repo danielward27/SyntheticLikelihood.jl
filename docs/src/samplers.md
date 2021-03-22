@@ -37,7 +37,7 @@ contours = layer(z = (x, y) -> logpdf(d, [x,y]), x = x, y = y, Geom.contour)
 points = layer(x = θ_samples[:,1], y = θ_samples[:,2], Geom.point,
                 Theme(alphas=[0.2], default_color = "black"))
 
-plot(contours, points)
+plot(contours, points)  # TODO Change gadfly to use plots
 ```
 
 

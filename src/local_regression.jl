@@ -179,3 +179,65 @@ function glm_local_Σ(;
 
     LocalΣ(Symmetric(Σ), ∂)
 end
+
+
+"""
+Log-synthetic likelihood, and its gradient and hessian.
+
+$(FIELDS)
+"""
+struct LocalSyntheticLikelihood
+    l::Float64
+    ∂::Vector{Float64}
+    ∂²::Matrix{Float64}
+end
+
+function LocalSyntheticLikelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64})
+  n_θ = size(μ.∂, 2)
+  ∂ = Vector{Float64}(undef, n_θ)
+  ∂² = Matrix{Float64}(undef, n_θ, n_θ)
+
+  # TODO: Drop low variance summary statistics
+
+  qrΣ = qr(Σ.Σ)
+  Σ⁻¹sᵒ₋μ = qrΣ \ (sᵒ - μ.μ)  # Precalculate Σ⁻¹(sᵒ-μ)
+
+  # Gradient
+  for k in 1:n_θ
+    Σ⁻¹∂Σₖ = qrΣ \ Σ.∂[:, :, k]
+    ∂[k] = μ.∂[:,k]' * Σ⁻¹sᵒ₋μ +
+      0.5*(sᵒ - μ.μ)' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - 0.5*tr(Σ⁻¹∂Σₖ)
+  end
+
+  # Hessian
+  for k in 1:n_θ for l in k:n_θ  # Upper traingular of hessian matrix
+    Σ⁻¹∂Σₗ = qrΣ \ Σ.∂[:, :, l]
+    Σ⁻¹∂Σₖ = qrΣ \ Σ.∂[:, :, k]
+    ∂²[k, l] =
+      μ.∂²[:, k, l]' * Σ⁻¹sᵒ₋μ - μ.∂[:, k]' * Σ⁻¹∂Σₗ * Σ⁻¹sᵒ₋μ - μ.∂[:, k]'* (qrΣ \ μ.∂[:, l])
+      - μ.∂[:, l]' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - (sᵒ - μ.μ)' * Σ⁻¹∂Σₗ * Σ⁻¹sᵒ₋μ
+      + (1/2)*tr(Σ⁻¹∂Σₗ * Σ⁻¹∂Σₖ)
+  end end
+  ∂² = Symmetric(∂²)
+
+  # Evaluate likelihood
+  mvn = MvNormal(μ.μ, Σ.Σ)
+  l = logpdf(mvn, sᵒ)
+
+  return LocalSyntheticLikelihood(l, ∂, ∂²)
+end
+
+
+function LocalSyntheticLikelihood(;
+  θ_orig::Vector{Float64}, s_true::Vector{Float64},
+  simulator::Function, summary::Function=identity,
+  P::Sampleable, n_sim::Integer
+  )
+
+  θ = peturb(θ_orig, P, n_sim)
+  s = simulate_n_s(θ; simulator, summary)
+  μ = quadratic_local_μ(; θ_orig, θ, s)
+  Σ = glm_local_Σ(; θ_orig, θ, μ.ϵ)
+  l = LocalSyntheticLikelihood(μ, Σ, s_true)
+  return l
+end
