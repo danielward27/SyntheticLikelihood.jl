@@ -24,7 +24,7 @@ We can then define how to sample from the distribution. Below I will use the [`P
 ```@example 1
 P = MvNormal(fill(0.5, 10))  # Local area in parameter space
 n_sim = 1000  # Simulations used at each iteration
-θ_orig = convert(Vector{Float64}, -5:5)  # Starting parameter values.
+θ_orig = convert(Vector{Float64}, 1:10)  # Starting parameter values.
 
 pl = PreconditionedLangevin(
   0.1, local_synthetic_likelihood; s_true, simulator, P, n_sim
@@ -41,7 +41,7 @@ plot(data.θ, label = param_names)
 ```
 
 Plotting the marginals after removing the burn in period:
-```
+```@example 1
 histogram(data.θ[250:end, :], label = param_names, layout = (2,5), size = (800, 600))
 ```
 We can see the samples are generally centered around the true parameter values (all zeros). More specifically, they are centered around `s_true` in this case, which are generally around zero.
