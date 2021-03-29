@@ -5,7 +5,6 @@ using DocStringExtensions
 using LinearAlgebra
 using Statistics
 using GLM
-using PositiveFactorizations
 
 import Base.@kwdef
 
