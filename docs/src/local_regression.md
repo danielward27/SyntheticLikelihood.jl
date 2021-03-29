@@ -1,6 +1,10 @@
 # Local regression
 Local regressions can be used to estimate the gradient and hessian of the likelihood using [`local_synthetic_likelihood`](@ref).
 
+```@docs
+local_synthetic_likelihood
+```
+
 Below is an example, inferring the means of a 10 dimensional multivariate normal distribution (with constant covariance), using a single observed sample from the distribution.
 
 ```@example 1
@@ -45,8 +49,3 @@ Plotting the marginals after removing the burn in period:
 histogram(data.θ[250:end, :], label = param_names, layout = (2,5), size = (800, 600))
 ```
 We can see the samples are generally centered around the true parameter values (all zeros). More specifically, they are centered around `s_true` in this case, which are generally around zero.
-
-
-```@docs
-local_synthetic_likelihood
-```

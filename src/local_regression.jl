@@ -193,8 +193,10 @@ $(SIGNATURES)
 - `simulator` The simulator function taking parameter vector θ.
 - `summary` The summary function taking output from the simulator.
 - `n_sim` The number of peturbed points to use for the local regression.
-- `eigval_threshold` Minimum eigenvalue threshold for the estimated hessian.
-    
+- `eigval_threshold = 0.5` Minimum eigenvalue threshold for the estimated hessian.
+    Negative eigenvalues are flipped and those smaller than the threshold are
+    set to the threshold.
+
 
 """
 function local_synthetic_likelihood(θ::Vector{Float64};
