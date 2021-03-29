@@ -6,7 +6,7 @@ Langevin
 PreconditionedLangevin
 ```
 
-The sampler object defines the hyperparameters of the sampler, and a function `local_approximation`, which takes `θ` and returns a `LocalApproximation` object, with fields `objective`, `gradient` and `hessian`. The gradient and hessian defualt to `nothing` if not required. This approach seems a bit convoluted (compared to e.g. seperately passing objective, gradient and Hessian functions), but it facilitates reusing calculations shared between calculating the objective, gradient and hessian, if desired. The aim should be to explore around the minima of the function, so the objective could be the negative log-posterior, for example.
+The sampler object defines the hyperparameters of the sampler, and a function `local_approximation`, which takes `θ` and returns a `ObjGradHess` object, with fields `objective`, `gradient` and `hessian`. The gradient and hessian defualt to `nothing` if not required. This approach seems a bit convoluted (compared to e.g. seperately passing objective, gradient and Hessian functions), but it facilitates reusing calculations shared between calculating the objective, gradient and hessian, if desired. The aim should be to explore around the minima of the function, so the objective could be the negative log-posterior, for example.
 
 The sampler object can then passed to `run_sampler!`, to sample from the distribution:
 ```@docs
@@ -21,7 +21,7 @@ using SyntheticLikelihood, Distributions, Plots
 # Sample from MVN
 d = MvNormal([10 5; 5 10])
 function local_approximation(θ)
-    LocalApproximation(objective = -logpdf(d, θ),
+    ObjGradHess(objective = -logpdf(d, θ),
                        gradient = -gradlogpdf(d, θ))
 end
 

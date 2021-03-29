@@ -187,7 +187,7 @@ $(SIGNATURES)
 
 ## Arguments
 - `θ` Starting parameter values.
-- `P::Sampleable` Distribution used to peturb parameter value
+- `P` Distribution used to peturb parameter value
     (e.g. 0 mean multivariate normal).
 - `s_true` The observed summary statistics.
 - `simulator` The simulator function taking parameter vector θ.
@@ -253,5 +253,47 @@ function local_synthetic_likelihood(
   mvn = MvNormal(μ.μ, Σ.Σ)
   l = logpdf(mvn, sᵒ)
 
-  return LocalApproximation(-l, -∂, neg_∂²)
+  return ObjGradHess(-l, -∂, neg_∂²)
+end
+
+
+
+
+"""
+Estimate negative log-posterior, and its gradient and hessian. Uses a local
+regressions to first estimate the gradient and hessian of the likelihood
+function, using `local_synthetic_likelihood`, then uses the chain rule to
+calculate the gradient of the posterior.
+
+Prior gradients and hessians are calculated with
+[DistributionsAD.jl](https://github.com/TuringLang/DistributionsAD.jl), so the
+prior must be compatible with this package.
+
+$(SIGNATURES)
+
+## Arguments
+- `θ` Starting parameter values.
+- `prior` A vector of distributions (from Distributions package). Note that
+    the distributions can be univariate or multivariate, but the overall dimension
+    must match that of the θ (and the order must be consistent).
+- `kwargs...` Key word arguments passed to `local_synthetic_likelihood`.
+"""
+
+function local_posterior(
+    θ::Vector{Float64};
+    prior::Vector{Sampleable},
+    kwargs...
+    )
+    @assert length(θ) == sum([length(p) for p in prior])
+
+
+    # TODO Handle cases where prior support is bounded?
+
+
+    # Calculate likelihood
+    l =  local_synthetic_likelihood(θ; kwargs...)
+
+
+
+
 end

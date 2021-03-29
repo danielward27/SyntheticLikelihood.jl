@@ -1,3 +1,30 @@
+abstract type AbstractSampler end
+
+"""
+Run the sampling algorithm. Data to collect at each iteration is specified by
+`collect_data`, and should be a subset of
+`[:θ, :objective, :gradient, :hessian, :counter]`.
+
+$(SIGNATURES)
+
+Returns a tuple, with keys matching `collect_data`.
+"""
+function run_sampler!(
+    sampler::AbstractSampler,
+    init_θ::Vector{Float64},
+    n_steps::Integer,
+    collect_data::Vector{Symbol} = [:θ, :objective])
+
+    state = get_init_state(sampler, init_θ)
+    data = init_data_tuple(state, collect_data, n_steps)
+
+    for i in 1:n_steps
+        update!(sampler, state)
+        add_state!(data, state, i)
+    end
+    simplify_data(data)
+end
+
 
 """
 Struct for containing the state of sampler at a particular iteration.
@@ -20,7 +47,7 @@ Struct for containing the objective function value, along with the
 
     $(FIELDS)
 """
-Base.@kwdef struct LocalApproximation
+Base.@kwdef struct ObjGradHess
     objective::Float64
     gradient::Union{AbstractVector, Nothing} = nothing
     hessian::Union{AbstractMatrix, Nothing} = nothing
@@ -83,9 +110,6 @@ function simplify_data(data::NamedTuple)
 end
 
 
-
-abstract type AbstractSampler end
-
 ## Langevin diffusion
 """
 Sampler object for Langevin diffusion. Uses a discrete time Euler approximation of
@@ -98,7 +122,7 @@ mutable struct Langevin <: AbstractSampler
     step_size::Float64
     "Step size parameter."
     local_approximation::Function
-    "Must return LocalApproximation object with objective and gradient fields."
+    "Must return ObjGradHess object with objective and gradient fields."
     kwargs
     "kwargs to be passed to local_approximation."
     Langevin(step_size, local_approximation; kwargs...) =
@@ -145,7 +169,7 @@ mutable struct PreconditionedLangevin <: AbstractSampler
     step_size::Float64
     "Step size parameter"
     local_approximation::Function
-    "Must return LocalApproximation object with objective, gradient and hessian."
+    "Must return ObjGradHess object with objective, gradient and hessian."
     kwargs
     "kwargs to be passed to local_approximation."
     PreconditionedLangevin(step_size, local_approximation; kwargs...) =
@@ -182,31 +206,4 @@ function update!(
     state.gradient = la.gradient
     state.hessian = la.hessian
     state.counter += 1
-end
-
-
-
-"""
-Run the sampling algorithm. Data to collect at each iteration is specified by
-`collect_data`, and should be a subset of
-`[:θ, :objective, :gradient, :hessian, :counter]`.
-
-$(SIGNATURES)
-
-Returns a tuple, with keys matching `collect_data`.
-"""
-function run_sampler!(
-    sampler::AbstractSampler,
-    init_θ::Vector{Float64},
-    n_steps::Integer,
-    collect_data::Vector{Symbol} = [:θ, :objective])
-
-    state = get_init_state(sampler, init_θ)
-    data = init_data_tuple(state, collect_data, n_steps)
-
-    for i in 1:n_steps
-        update!(sampler, state)
-        add_state!(data, state, i)
-    end
-    simplify_data(data)
 end

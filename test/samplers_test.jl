@@ -4,7 +4,7 @@ Random.seed!(1)
 # Sample from MVN
 function local_approximation(θ)
     d = MvNormal([10 5; 5 10])
-    LocalApproximation(objective = -logpdf(d, θ),
+    ObjGradHess(objective = -logpdf(d, θ),
                        gradient = -gradlogpdf(d, θ))
 end
 
