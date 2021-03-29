@@ -196,8 +196,6 @@ $(SIGNATURES)
 - `eigval_threshold = 0.5` Minimum eigenvalue threshold for the estimated hessian.
     Negative eigenvalues are flipped and those smaller than the threshold are
     set to the threshold.
-
-
 """
 function local_synthetic_likelihood(θ::Vector{Float64};
   s_true::Vector{Float64},
