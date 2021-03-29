@@ -33,10 +33,8 @@ n_sim = 1000  # Simulations used at each iteration
 pl = PreconditionedLangevin(
   0.1, local_synthetic_likelihood; s_true, simulator, P, n_sim
   )
-```
 
-Now we can cary out the sampling and plot the results.
-```@example 1
+# Carry out the sampling and plot the results
 data = run_sampler!(pl, θ_orig, 1000)
 
 # Plot the samples
