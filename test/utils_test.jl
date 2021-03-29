@@ -40,3 +40,5 @@ A = ensure_posdef(A, threshold)
 
 @test isposdef(A)
 @test all(eigvals(A) .>= (threshold - 1e-10))
+
+@test SyntheticLikelihood.remove_invariant([1 1 1; 2 1 2]) ==  [1 1; 2 2]
