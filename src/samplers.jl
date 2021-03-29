@@ -16,7 +16,7 @@ end
 
 """
 Struct for containing the objective function value, along with the
-    gradient and hessian if appropriate (defualt to nothing).
+    gradient and hessian if appropriate (defualt to `nothing`).
 
     $(FIELDS)
 """
@@ -94,31 +94,38 @@ the Langevin diffusion (unadjusted Langevin algorithm), given by the update
 
 $(FIELDS)
 """
-Base.@kwdef mutable struct Langevin <: AbstractSampler
+mutable struct Langevin <: AbstractSampler
     step_size::Float64
     "Step size parameter."
     local_approximation::Function
     "Must return LocalApproximation object with objective and gradient fields."
+    kwargs
+    "kwargs to be passed to local_approximation."
+    Langevin(step_size, local_approximation; kwargs...) =
+        new(step_size, local_approximation, kwargs)
 end
+
 
 
 function get_init_state(
     sampler::Langevin,
-    init_θ::Vector{Float64})
+    init_θ::Vector{Float64},
+    kwargs...)
 
-    la = sampler.local_approximation(init_θ)
+    la = sampler.local_approximation(init_θ; sampler.kwargs...)
 
     SamplerState(;θ = init_θ,
                 objective = la.objective,
                 gradient = la.gradient)
 end
 
-function update!(sampler::Langevin, state::SamplerState)
+
+function update!(sampler::Langevin, state::SamplerState, kwargs...)
     η, θ, ∇  = sampler.step_size, state.θ, state.gradient
     ξ = rand(MvNormal(length(θ) , sqrt(η)))
     state.θ = θ .- η ./ 2 .* ∇ .+ ξ
 
-    la = sampler.local_approximation(state.θ)
+    la = sampler.local_approximation(state.θ; sampler.kwargs...)
     state.objective = la.objective
     state.gradient = la.gradient
     state.counter += 1
@@ -134,19 +141,24 @@ Sampler object for Preconditioned Langevin diffusion. Also can be thought of as
 
     $(FIELDS)
 """
-Base.@kwdef mutable struct PreconditionedLangevin <: AbstractSampler
+mutable struct PreconditionedLangevin <: AbstractSampler
     step_size::Float64
     "Step size parameter"
     local_approximation::Function
     "Must return LocalApproximation object with objective, gradient and hessian."
+    kwargs
+    "kwargs to be passed to local_approximation."
+    PreconditionedLangevin(step_size, local_approximation; kwargs...) =
+        new(step_size, local_approximation, kwargs)
 end
 
 
 function get_init_state(
     sampler::PreconditionedLangevin,
-    init_θ::Vector{Float64})
+    init_θ::Vector{Float64},
+    kwargs...)
 
-    la = sampler.local_approximation(init_θ)
+    la = sampler.local_approximation(init_θ; sampler.kwargs...)
 
     SamplerState(;θ = init_θ,
                 objective = la.objective,
@@ -155,13 +167,17 @@ function get_init_state(
 end
 
 
-function update!(sampler::PreconditionedLangevin, state::SamplerState)
+function update!(
+    sampler::PreconditionedLangevin,
+    state::SamplerState,
+    kwargs...
+    )
     η, θ, ∇, H  = sampler.step_size, state.θ, state.gradient, state.hessian
     ξ = rand(MvNormalCanon(1/η .* H))  # Equiv to N(0, η.*H⁻¹)
     H = Symmetric(H)
     state.θ = θ .- η/2 .* (H \ ∇) .+ ξ
 
-    la = sampler.local_approximation(state.θ)
+    la = sampler.local_approximation(state.θ; sampler.kwargs...)
     state.objective = la.objective
     state.gradient = la.gradient
     state.hessian = la.hessian

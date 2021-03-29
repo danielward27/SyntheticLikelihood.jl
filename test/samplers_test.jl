@@ -1,6 +1,4 @@
 using SyntheticLikelihood, Test, Random, Distributions
-
-
 Random.seed!(1)
 
 # Sample from MVN
@@ -13,7 +11,7 @@ end
 init_θ = [-15., -15]
 n_steps = 1000
 
-langevin = Langevin(;step_size = 1., local_approximation)
+langevin = Langevin(1., local_approximation)
 data = run_sampler!(langevin, init_θ, n_steps, [:θ, :counter])
 
 θ = data[:θ][101:end, :] # Remove burn in

@@ -125,5 +125,3 @@ norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
 
 # Check gradient estimates are improved compared to assuming 0
 @test norm(estimted_Σ.∂ - true_Σ.∂) < norm(true_Σ.∂)
-
-# Off diagonal gradients aren't estimated very well (which is expected).

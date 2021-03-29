@@ -182,38 +182,49 @@ end
 
 
 """
-Estimate log-synthetic likelihood, and its gradient and hessian.
+Estimate negative log-synthetic likelihood, and its gradient and hessian.
 $(SIGNATURES)
 
 ## Arguments
-- `θᵢ` -
-- `s_true`
-- `simulator`
-- `summary`
-- `P::Sampleable`
-- `n_sim::Integer`
+- `θ` Starting parameter values.
+- `P::Sampleable` Distribution used to peturb parameter value
+    (e.g. 0 mean multivariate normal).
+- `s_true` The observed summary statistics.
+- `simulator` The simulator function taking parameter vector θ.
+- `summary` The summary function taking output from the simulator.
+- `n_sim` The number of peturbed points to use for the local regression.
+- `eigval_threshold` Minimum eigenvalue threshold for the estimated hessian.
+    
 
 """
-function local_synthetic_likelihood(;
-  θᵢ::Vector{Float64}, s_true::Vector{Float64},
-  simulator::Function, summary::Function=identity,
-  P::Sampleable, n_sim::Integer
+function local_synthetic_likelihood(θ::Vector{Float64};
+  s_true::Vector{Float64},
+  simulator::Function,
+  summary::Function=identity,
+  P::Sampleable,
+  n_sim::Integer,
+  eigval_threshold::Float64 = 0.5
   )
+  θᵢ = θ
   θ = peturb(θᵢ, P, n_sim)
   s = simulate_n_s(θ; simulator, summary)
+  s = remove_invariant(s)
   μ = quadratic_local_μ(; θᵢ, θ, s)
   Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
-  l = local_synthetic_likelihood(μ, Σ, s_true)
+  l = local_synthetic_likelihood(μ, Σ, s_true; eigval_threshold)
   return l
 end
 
 
-function local_synthetic_likelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float64})
+# The objective gradient and hessian calculation after local regressions.
+function local_synthetic_likelihood(
+    μ::Localμ, Σ::LocalΣ,
+    s_true::Vector{Float64};
+    eigval_threshold::Float64)
+  sᵒ = s_true
   n_θ = size(μ.∂, 2)
   ∂ = Vector{Float64}(undef, n_θ)
   ∂² = Matrix{Float64}(undef, n_θ, n_θ)
-
-  # TODO: Drop low variance summary statistics
 
   qrΣ = qr(Σ.Σ)
   Σ⁻¹sᵒ₋μ = qrΣ \ (sᵒ - μ.μ)  # Precalculate Σ⁻¹(sᵒ-μ)
@@ -221,24 +232,26 @@ function local_synthetic_likelihood(μ::Localμ, Σ::LocalΣ, sᵒ::Vector{Float
   # Gradient
   for k in 1:n_θ
     Σ⁻¹∂Σₖ = qrΣ \ Σ.∂[:, :, k]
-    ∂[k] = μ.∂[:,k]' * Σ⁻¹sᵒ₋μ +
-      0.5*(sᵒ - μ.μ)' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - 0.5*tr(Σ⁻¹∂Σₖ)
+    ∂[k] = (μ.∂[:,k]' * Σ⁻¹sᵒ₋μ +
+        0.5*(sᵒ - μ.μ)' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - 0.5*tr(Σ⁻¹∂Σₖ))
   end
 
   # Hessian
   for k in 1:n_θ for l in k:n_θ  # Upper traingular of hessian matrix
     Σ⁻¹∂Σₗ = qrΣ \ Σ.∂[:, :, l]
     Σ⁻¹∂Σₖ = qrΣ \ Σ.∂[:, :, k]
-    ∂²[k, l] =
+    ∂²[k, l] = (
       μ.∂²[:, k, l]' * Σ⁻¹sᵒ₋μ - μ.∂[:, k]' * Σ⁻¹∂Σₗ * Σ⁻¹sᵒ₋μ - μ.∂[:, k]'* (qrΣ \ μ.∂[:, l])
-      - μ.∂[:, l]' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - (sᵒ - μ.μ)' * Σ⁻¹∂Σₗ * Σ⁻¹sᵒ₋μ
+      - μ.∂[:, l]' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - (sᵒ - μ.μ)' * Σ⁻¹∂Σₗ * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ
       + (1/2)*tr(Σ⁻¹∂Σₗ * Σ⁻¹∂Σₖ)
+      )
   end end
   ∂² = Symmetric(∂²)
+  neg_∂² = ensure_posdef(-∂², eigval_threshold)
 
   # Evaluate likelihood
   mvn = MvNormal(μ.μ, Σ.Σ)
   l = logpdf(mvn, sᵒ)
 
-  return LocalApproximation(-l, -∂, -∂²)
+  return LocalApproximation(-l, -∂, neg_∂²)
 end
