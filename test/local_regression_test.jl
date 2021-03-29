@@ -1,4 +1,4 @@
-using SyntheticLikelihood, Test, LinearAlgebra, Distributions, Random
+using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra
 
 Random.seed!(1)
 
@@ -125,3 +125,20 @@ norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
 
 # Check gradient estimates are improved compared to assuming 0
 @test norm(estimted_Σ.∂ - true_Σ.∂) < norm(true_Σ.∂)
+
+
+## Test automatic differentiation of priors (for product and mv dists)
+
+neg_prior_gradient = SyntheticLikelihood.neg_prior_gradient
+neg_prior_hessian = SyntheticLikelihood.neg_prior_hessian
+
+sd = 2.
+prod_dist = Product([Normal(1,sd), Normal(2,sd), Normal(3,sd)])
+mv_dist = MvNormal([1,2,3], sd)
+
+θ = [1,2,3]
+@test neg_prior_gradient(prod_dist, θ) ≈ [0,0,0]
+@test neg_prior_gradient(mv_dist, θ) ≈ [0,0,0]
+
+@test neg_prior_hessian(mv_dist, θ) ≈ Diagonal(fill(1/sd^2, 3))
+@test neg_prior_hessian(prod_dist, θ) ≈ Diagonal(fill(1/sd^2, 3))

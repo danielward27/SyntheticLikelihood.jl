@@ -257,7 +257,18 @@ function local_synthetic_likelihood(
 end
 
 
+## Bayesian
 
+# For Bayesian analyses we also need the gradient and hessian of -prior:
+function neg_prior_gradient(D, θ)
+    f(θ) = -loglikelihood(D, θ)
+    ForwardDiff.gradient(f, θ)
+end
+
+function neg_prior_hessian(D, θ)
+    f(θ) = -loglikelihood(D, θ)
+    ForwardDiff.hessian(f, θ)
+end
 
 """
 Estimate negative log-posterior, and its gradient and hessian. Uses a local

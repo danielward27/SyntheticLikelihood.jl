@@ -5,6 +5,7 @@ using DocStringExtensions
 using LinearAlgebra
 using Statistics
 using GLM
+using ForwardDiff
 
 import Base.@kwdef
 
