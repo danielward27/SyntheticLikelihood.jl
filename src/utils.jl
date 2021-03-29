@@ -40,11 +40,13 @@ end
 
 
 # Used to remove statistics that have zero variance
-function remove_invariant(s)
+function remove_invariant(s; warn=true)
     no_var = var.(eachcol(s)) .≈ 0
     if any(no_var)
-        @warn "$(@varname(s)) has zero variance columns at index "*
-        "$(findall(no_var)). Removing these columns."
+        if warn
+            @warn "$(@varname(s)) has zero variance columns at index "*
+            "$(findall(no_var)). Removing these columns."
+        end
         s = s[:, .!no_var]
     end
     return s

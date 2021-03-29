@@ -121,12 +121,12 @@ $(FIELDS)
 mutable struct Langevin <: AbstractSampler
     step_size::Float64
     "Step size parameter."
-    local_approximation::Function
+    obj_grad_hess::Function
     "Must return ObjGradHess object with objective and gradient fields."
     kwargs
-    "kwargs to be passed to local_approximation."
-    Langevin(step_size, local_approximation; kwargs...) =
-        new(step_size, local_approximation, kwargs)
+    "kwargs to be passed to obj_grad_hess."
+    Langevin(step_size, obj_grad_hess; kwargs...) =
+        new(step_size, obj_grad_hess, kwargs)
 end
 
 
@@ -136,7 +136,7 @@ function get_init_state(
     init_θ::Vector{Float64},
     kwargs...)
 
-    la = sampler.local_approximation(init_θ; sampler.kwargs...)
+    la = sampler.obj_grad_hess(init_θ; sampler.kwargs...)
 
     SamplerState(;θ = init_θ,
                 objective = la.objective,
@@ -149,7 +149,7 @@ function update!(sampler::Langevin, state::SamplerState, kwargs...)
     ξ = rand(MvNormal(length(θ) , sqrt(η)))
     state.θ = θ .- η ./ 2 .* ∇ .+ ξ
 
-    la = sampler.local_approximation(state.θ; sampler.kwargs...)
+    la = sampler.obj_grad_hess(state.θ; sampler.kwargs...)
     state.objective = la.objective
     state.gradient = la.gradient
     state.counter += 1
@@ -168,12 +168,12 @@ Sampler object for Preconditioned Langevin diffusion. Also can be thought of as
 mutable struct PreconditionedLangevin <: AbstractSampler
     step_size::Float64
     "Step size parameter"
-    local_approximation::Function
+    obj_grad_hess::Function
     "Must return ObjGradHess object with objective, gradient and hessian."
     kwargs
-    "kwargs to be passed to local_approximation."
-    PreconditionedLangevin(step_size, local_approximation; kwargs...) =
-        new(step_size, local_approximation, kwargs)
+    "kwargs to be passed to obj_grad_hess."
+    PreconditionedLangevin(step_size, obj_grad_hess; kwargs...) =
+        new(step_size, obj_grad_hess, kwargs)
 end
 
 
@@ -182,7 +182,7 @@ function get_init_state(
     init_θ::Vector{Float64},
     kwargs...)
 
-    la = sampler.local_approximation(init_θ; sampler.kwargs...)
+    la = sampler.obj_grad_hess(init_θ; sampler.kwargs...)
 
     SamplerState(;θ = init_θ,
                 objective = la.objective,
@@ -201,7 +201,7 @@ function update!(
     H = Symmetric(H)
     state.θ = θ .- η/2 .* (H \ ∇) .+ ξ
 
-    la = sampler.local_approximation(state.θ; sampler.kwargs...)
+    la = sampler.obj_grad_hess(state.θ; sampler.kwargs...)
     state.objective = la.objective
     state.gradient = la.gradient
     state.hessian = la.hessian
