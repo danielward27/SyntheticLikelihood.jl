@@ -33,6 +33,38 @@ function stack_arrays(x::Vector)
 end
 
 
+# Get the name of a variable
+macro varname(var)
+   return string(var)
+end
+
+
+# Used to remove statistics that have zero variance
+function remove_invariant(s)
+    no_var = var.(eachcol(s)) .≈ 0
+    if any(no_var)
+        @warn "$(@varname(s)) has zero variance columns at index "*
+        "$(findall(no_var)). Removing these columns."
+        s = s[:, .!no_var]
+    end
+    return s
+end
+
+
+"""
+Make matrix positive definite using eigen decomposition.
+Flips negative eiugnvalues then ensure all greater than threshold.
+"""
+function ensure_posdef(M::Symmetric, threshold::Float64)
+  M = eigen(M)
+  vals = abs.(M.values)
+  vals[vals .< threshold] .= threshold
+  M = Eigen(vals, M.vectors)
+  Symmetric(Matrix(M))
+end
+
+
+
 ## For testing:
 # Deterministic simulator for testing
 function deterministic_test_simulator(θ::AbstractVector{Float64})

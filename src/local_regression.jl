@@ -52,17 +52,17 @@ end
 """
 Finds the local behaviour of the summary statistic mean μ.
 Uses quadratic linear regression to approximate the mean, gradient and
-hessian around `θ_orig`. Returns a `Localμ` struct (see above).
+hessian around `θᵢ`. Returns a `Localμ` struct (see above).
 
 $(SIGNATURES)
 
 # Arguments
-- `θ_orig::AbstractVector` Original θ.
+- `θᵢ::AbstractVector` Original θ.
 - `θ::AbstractMatrix` Peturbed θ (sampled from local area).
 - `s::AbstractMatrix` Corresponding summary statistics to θ.
 """
 function quadratic_local_μ(;
-    θ_orig::AbstractVector,
+    θᵢ::AbstractVector,
     θ::AbstractMatrix,
     s::AbstractMatrix)
     @assert size(θ, 1) == size(s, 1)
@@ -82,14 +82,14 @@ function quadratic_local_μ(;
     ϵ = Matrix{Float64}(undef, nₛᵢₘ, nₛ)
 
     # Center and carry out quadratic regression for each s
-    θ = θ .- θ_orig'
+    θ = θ .- θᵢ'
     θ, combinations = quadratic_design_matrix(θ)
 
     for i in 1:nₛ
        β, ŝ = linear_regression(θ, s[:, i])
 
        # Convert β to matrix
-       β_mat = Matrix{Float64}(undef, length(θ_orig) + 1, length(θ_orig) + 1)
+       β_mat = Matrix{Float64}(undef, length(θᵢ) + 1, length(θᵢ) + 1)
 
        for (i, idxs) in enumerate(combinations)
            β_mat[idxs...] = β[i]  # Upper traingular
@@ -139,18 +139,18 @@ with indices i and j.
 $(SIGNATURES)
 
 # Arguments
-- `θ_orig::AbstractVector`  Original θ (used for centering).
+- `θᵢ::AbstractVector`  Original θ (used for centering).
 - `θ::AbstractMatrix` Peturbed θ from local area.
 - `ϵ::AbstractMatrix` Residuals from quadratic regression (n_sim × n_sumstats).
 """
 function glm_local_Σ(;
-    θ_orig::AbstractVector,
+    θᵢ::AbstractVector,
     θ::AbstractMatrix,
     ϵ::AbstractMatrix)
 
     nₛ = size(ϵ, 2)
-    n_θ = length(θ_orig)
-    θ = θ .- θ_orig'  # Center
+    n_θ = length(θᵢ)
+    θ = θ .- θᵢ'  # Center
     θ = hcat(ones(size(θ, 1)), θ)  # Bias
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
@@ -178,4 +178,80 @@ function glm_local_Σ(;
     Σ = sds * samp_Ψ * sds
 
     LocalΣ(Symmetric(Σ), ∂)
+end
+
+
+"""
+Estimate negative log-synthetic likelihood, and its gradient and hessian.
+$(SIGNATURES)
+
+## Arguments
+- `θ` Starting parameter values.
+- `P::Sampleable` Distribution used to peturb parameter value
+    (e.g. 0 mean multivariate normal).
+- `s_true` The observed summary statistics.
+- `simulator` The simulator function taking parameter vector θ.
+- `summary` The summary function taking output from the simulator.
+- `n_sim` The number of peturbed points to use for the local regression.
+- `eigval_threshold` Minimum eigenvalue threshold for the estimated hessian.
+    
+
+"""
+function local_synthetic_likelihood(θ::Vector{Float64};
+  s_true::Vector{Float64},
+  simulator::Function,
+  summary::Function=identity,
+  P::Sampleable,
+  n_sim::Integer,
+  eigval_threshold::Float64 = 0.5
+  )
+  θᵢ = θ
+  θ = peturb(θᵢ, P, n_sim)
+  s = simulate_n_s(θ; simulator, summary)
+  s = remove_invariant(s)
+  μ = quadratic_local_μ(; θᵢ, θ, s)
+  Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
+  l = local_synthetic_likelihood(μ, Σ, s_true; eigval_threshold)
+  return l
+end
+
+
+# The objective gradient and hessian calculation after local regressions.
+function local_synthetic_likelihood(
+    μ::Localμ, Σ::LocalΣ,
+    s_true::Vector{Float64};
+    eigval_threshold::Float64)
+  sᵒ = s_true
+  n_θ = size(μ.∂, 2)
+  ∂ = Vector{Float64}(undef, n_θ)
+  ∂² = Matrix{Float64}(undef, n_θ, n_θ)
+
+  qrΣ = qr(Σ.Σ)
+  Σ⁻¹sᵒ₋μ = qrΣ \ (sᵒ - μ.μ)  # Precalculate Σ⁻¹(sᵒ-μ)
+
+  # Gradient
+  for k in 1:n_θ
+    Σ⁻¹∂Σₖ = qrΣ \ Σ.∂[:, :, k]
+    ∂[k] = (μ.∂[:,k]' * Σ⁻¹sᵒ₋μ +
+        0.5*(sᵒ - μ.μ)' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - 0.5*tr(Σ⁻¹∂Σₖ))
+  end
+
+  # Hessian
+  for k in 1:n_θ for l in k:n_θ  # Upper traingular of hessian matrix
+    Σ⁻¹∂Σₗ = qrΣ \ Σ.∂[:, :, l]
+    Σ⁻¹∂Σₖ = qrΣ \ Σ.∂[:, :, k]
+    ∂²[k, l] = (
+      μ.∂²[:, k, l]' * Σ⁻¹sᵒ₋μ - μ.∂[:, k]' * Σ⁻¹∂Σₗ * Σ⁻¹sᵒ₋μ - μ.∂[:, k]'* (qrΣ \ μ.∂[:, l])
+      - μ.∂[:, l]' * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ - (sᵒ - μ.μ)' * Σ⁻¹∂Σₗ * Σ⁻¹∂Σₖ * Σ⁻¹sᵒ₋μ
+      + (1/2)*tr(Σ⁻¹∂Σₗ * Σ⁻¹∂Σₖ)
+      )
+  end end
+  ∂² = Symmetric(∂²)
+  neg_∂² = ensure_posdef(-∂², eigval_threshold)
+
+  # Evaluate likelihood
+  mvn = MvNormal(μ.μ, Σ.Σ)
+  l = logpdf(mvn, sᵒ)
+
+  return LocalApproximation(-l, -∂, neg_∂²)
 end

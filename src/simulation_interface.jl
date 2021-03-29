@@ -12,8 +12,6 @@ $(SIGNATURES)
 - `simulator::Function` Simulator.
 - `summary::Function` Summary function that takes output of simulator (defualt identity).
 - `n_sim::Integer` Number of simulations.
-- `simulator_kwargs` Kwargs passed to simulator.
-- `summary_kwargs` Kwargs passed to summary.
 - `parallel::Bool = false` Whether to run on multiple threads.
 """
 function simulate_n_s(
@@ -21,14 +19,12 @@ function simulate_n_s(
     simulator::Function,
     summary::Function = identity,
     n_sim::Integer = 1,
-    simulator_kwargs = Dict(),
-    summary_kwargs = Dict(),
     parallel::Bool = false
     )
 
     # First simulation outside for loop to get s length
-    x = simulator(θ; simulator_kwargs...)
-    s = summary(x; summary_kwargs...)
+    x = simulator(θ)
+    s = summary(x)
 
     results = Array{Float64}(undef, n_sim, length(s))
     results[1, :] = s
@@ -36,13 +32,12 @@ function simulate_n_s(
     if parallel
         # Note storing intermediate results naively could create a data race
         Threads.@threads for i in 2:n_sim
-            results[i, :] = summary(simulator(θ; simulator_kwargs...),
-                                    summary_kwargs...)
+            results[i, :] = summary(simulator(θ))
         end
     else
         for i in 2:n_sim
-            x = simulator(θ; simulator_kwargs...)
-            s = summary(x; summary_kwargs...)
+            x = simulator(θ)
+            s = summary(x)
             results[i, :] = s
         end
     end
@@ -61,28 +56,25 @@ function simulate_n_s(
     θ::AbstractMatrix;
     simulator::Function,
     summary::Function = identity,
-    simulator_kwargs = Dict(),
-    summary_kwargs = Dict(),
     parallel::Bool = false
     )
 
     # First simulation outside for loop to get s length
-    x = simulator(θ[1, :]; simulator_kwargs...)
-    s = summary(x; summary_kwargs...)
+    x = simulator(θ[1, :])
+    s = summary(x)
 
     results = Array{Float64}(undef, size(θ, 1), length(s))
     results[1, :] = s
 
     if parallel
         Threads.@threads for i in 2:size(θ, 1)
-            results[i, :] = summary(simulator(θ[i, :]; simulator_kwargs...);
-                                    summary_kwargs...)
+            results[i, :] = summary(simulator(θ[i, :]))
                                 end
 
     else
         for i in 2:size(θ, 1)
-            x = simulator(θ[i, :]; simulator_kwargs...)
-            s = summary(x; summary_kwargs...)
+            x = simulator(θ[i, :])
+            s = summary(x)
             results[i, :] = s
         end
     end
