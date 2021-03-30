@@ -5,6 +5,7 @@ using DocStringExtensions
 using LinearAlgebra
 using Statistics
 using GLM
+using ForwardDiff
 
 import Base.@kwdef
 
@@ -23,7 +24,7 @@ export synthetic_likelihood
 
 # local regression
 export quadratic_design_matrix, linear_regression, Localμ, quadratic_local_μ,
- get_residuals, LocalΣ, glm_local_Σ, local_synthetic_likelihood, LocalApproximation
+ get_residuals, LocalΣ, glm_local_Σ, local_synthetic_likelihood, ObjGradHess
 
 # Samplers
 export Langevin, PreconditionedLangevin, run_sampler!
