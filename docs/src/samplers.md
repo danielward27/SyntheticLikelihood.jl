@@ -13,7 +13,7 @@ The sampler object can then passed to `run_sampler!`, to sample from the distrib
 run_sampler!
 ```
 
-Below is an example to sample from a multivariate normal density using the discretized langevin diffusion (Unadjusted Langevin Algorithm).
+Below is an example to sample from a multivariate normal density using the discretized langevin diffusion (Unadjusted Langevin Algorithm). In the below example a summary function is not used (it is left to defualt to the identity), so inference is performed on the raw simulator output.
 
 ```@example
 using SyntheticLikelihood, Distributions, Plots

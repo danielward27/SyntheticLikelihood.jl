@@ -260,13 +260,14 @@ end
 ## Bayesian
 
 # For Bayesian analyses we also need the gradient and hessian of -prior:
-function neg_prior_gradient(D, θ)
-    f(θ) = -loglikelihood(D, θ)
+
+function neg_prior_gradient(d, θ)
+    f(θ) = -loglikelihood(d, θ)
     ForwardDiff.gradient(f, θ)
 end
 
-function neg_prior_hessian(D, θ)
-    f(θ) = -loglikelihood(D, θ)
+function neg_prior_hessian(d, θ)
+    f(θ) = -loglikelihood(d, θ)
     ForwardDiff.hessian(f, θ)
 end
 
@@ -276,9 +277,11 @@ regressions to first estimate the gradient and hessian of the likelihood
 function, using `local_synthetic_likelihood`, then uses the chain rule to
 calculate the gradient of the posterior.
 
-Prior gradients and hessians are calculated with
-[DistributionsAD.jl](https://github.com/TuringLang/DistributionsAD.jl), so the
-prior must be compatible with this package.
+Prior gradient and hessian are calculated with
+[ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl). Univariate priors
+can be specified using a `Product` distribution from Distributions.jl.
+Or a multivariate prior can be specified using a multivariate distribution
+Distributions.jl.
 
 $(SIGNATURES)
 
@@ -302,6 +305,8 @@ function local_posterior(
 
 
     # Calculate likelihood
+
+    # TODO need a way to check valid proposals below
     l =  local_synthetic_likelihood(θ; kwargs...)
 
 

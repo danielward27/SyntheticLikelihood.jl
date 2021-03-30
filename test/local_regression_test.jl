@@ -137,6 +137,8 @@ prod_dist = Product([Normal(1,sd), Normal(2,sd), Normal(3,sd)])
 mv_dist = MvNormal([1,2,3], sd)
 
 θ = [1,2,3]
+
+
 @test neg_prior_gradient(prod_dist, θ) ≈ [0,0,0]
 @test neg_prior_gradient(mv_dist, θ) ≈ [0,0,0]
 
