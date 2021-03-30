@@ -42,7 +42,7 @@ Z = map(f, X, Y)
 p = contour(x, y, f)
 scatter!(θ_samples[:,1], θ_samples[:,2], legend = false)
 ```
-Note that here a determinisic `obj_grad_hess` function is used. Generally, in simulation-based-inference this would not be available, and hence this can be replaced for example with [`local_synthetic_likelihood`](@ref), which uses local regressions to approximate the gradient and Hessian of the likelihood function.
+Note that here a determinisic `obj_grad_hess` function is used. Generally, in simulation-based-inference this would not be available, and hence this can be replaced for example with [`local_likelihood`](@ref), which uses local regressions to approximate the gradient and Hessian of the likelihood function.
 
 ## Implementation details
 To implement a new sampler, each sampler must:

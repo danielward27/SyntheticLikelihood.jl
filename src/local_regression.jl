@@ -182,6 +182,59 @@ end
 
 
 """
+Object that contains the hyperparameters for getting a local approximation
+of the likelihood surface using local regressions.
+"""
+Base.@kwdef struct LocalLikelihood
+    simulator::Function
+    summary::Function=identity
+    P::Sampleable
+    n_sim::Integer
+    s_true::Vector{Float64}
+    eigval_threshold::Float64 = 0.5
+end
+
+
+
+Base.@kwdef struct LocalPosterior
+    prior::Sampleable
+    simulator::Function
+    summary::Function=identity
+    P::Sampleable
+    n_sim::Integer
+    s_true::Vector{Float64}
+    eigval_threshold::Float64 = 0.5
+end
+
+
+
+function get_obj_grad_hess(
+    local_likelihood::LocalLikelihood,
+    θ::Vector{Float64}
+    )
+    θᵢ = θ
+    ll = local_likelihood
+    θ = peturb(θᵢ, ll.P, ll.n_sim)
+    s = simulate_n_s(θ; ll.simulator, ll.summary)
+    s = remove_invariant(s)
+    μ = quadratic_local_μ(; θᵢ, θ, s)
+    Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
+    l = _likelihood_obj_grad_hess(μ, Σ, ll.s_true; ll.eigval_threshold)
+    l
+end
+
+
+function get_obj_grad_hess(
+    local_posterior::LocalPosterior,
+    θ::Vector{Float64}
+    )
+    error("unimplemented")
+end
+
+
+
+
+"""
 Estimate negative log-synthetic likelihood, and its gradient and hessian.
 $(SIGNATURES)
 
@@ -197,7 +250,7 @@ $(SIGNATURES)
     Negative eigenvalues are flipped and those smaller than the threshold are
     set to the threshold.
 """
-function local_synthetic_likelihood(θ::Vector{Float64};
+function local_likelihood(θ::Vector{Float64};
   s_true::Vector{Float64},
   simulator::Function,
   summary::Function=identity,
@@ -211,13 +264,13 @@ function local_synthetic_likelihood(θ::Vector{Float64};
   s = remove_invariant(s)
   μ = quadratic_local_μ(; θᵢ, θ, s)
   Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
-  l = local_synthetic_likelihood(μ, Σ, s_true; eigval_threshold)
+  l = local_likelihood(μ, Σ, s_true; eigval_threshold)
   return l
 end
 
 
 # The objective gradient and hessian calculation after local regressions.
-function local_synthetic_likelihood(
+function _likelihood_obj_grad_hess(
     μ::Localμ, Σ::LocalΣ,
     s_true::Vector{Float64};
     eigval_threshold::Float64)
@@ -261,12 +314,12 @@ end
 
 # For Bayesian analyses we also need the gradient and hessian of -prior:
 
-function neg_prior_gradient(d, θ)
+function neg_prior_gradient(d::Sampleable, θ::Vector{Float64})
     f(θ) = -loglikelihood(d, θ)
     ForwardDiff.gradient(f, θ)
 end
 
-function neg_prior_hessian(d, θ)
+function neg_prior_hessian(d::Sampleable, θ::Vector{Float64})
     f(θ) = -loglikelihood(d, θ)
     ForwardDiff.hessian(f, θ)
 end
@@ -274,7 +327,7 @@ end
 """
 Estimate negative log-posterior, and its gradient and hessian. Uses a local
 regressions to first estimate the gradient and hessian of the likelihood
-function, using `local_synthetic_likelihood`, then uses the chain rule to
+function, using `local_likelihood`, then uses the chain rule to
 calculate the gradient of the posterior.
 
 Prior gradient and hessian are calculated with
@@ -290,7 +343,7 @@ $(SIGNATURES)
 - `prior` A vector of distributions (from Distributions package). Note that
     the distributions can be univariate or multivariate, but the overall dimension
     must match that of the θ (and the order must be consistent).
-- `kwargs...` Key word arguments passed to `local_synthetic_likelihood`.
+- `kwargs...` Key word arguments passed to `local_likelihood`.
 """
 
 function local_posterior(
@@ -307,7 +360,7 @@ function local_posterior(
     # Calculate likelihood
 
     # TODO need a way to check valid proposals below
-    l =  local_synthetic_likelihood(θ; kwargs...)
+    l =  local_likelihood(θ; kwargs...)
 
 
 

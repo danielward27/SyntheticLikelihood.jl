@@ -1,5 +1,11 @@
 using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra
 
+
+quadratic_design_matrix = SyntheticLikelihood.quadratic_design_matrix
+linear_regression = SyntheticLikelihood.linear_regression
+simulator = SyntheticLikelihood.deterministic_test_simulator
+
+
 Random.seed!(1)
 
 X = [1 2; 4 3]
@@ -22,7 +28,6 @@ X, combinations = quadratic_design_matrix(X)
 
 ## Test quadratic_local_μ gives expected results for deterministic quadratic simulator
 
-simulator = SyntheticLikelihood.deterministic_test_simulator
 
 θᵢ = [2.0, 5]
 P = MvNormal(length(θᵢ), 2)
@@ -136,7 +141,7 @@ sd = 2.
 prod_dist = Product([Normal(1,sd), Normal(2,sd), Normal(3,sd)])
 mv_dist = MvNormal([1,2,3], sd)
 
-θ = [1,2,3]
+θ = [1.,2,3]
 
 
 @test neg_prior_gradient(prod_dist, θ) ≈ [0,0,0]
