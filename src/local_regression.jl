@@ -102,8 +102,8 @@ Contains the hyperparameters for getting a local approximation
 of the posterior (using `LocalLikelihood` and a prior).
 """
 Base.@kwdef struct LocalPosterior <: LocalApproximation
-    prior::Sampleable
     local_likelihood::LocalLikelihood
+    prior::Sampleable
 end
 
 """
@@ -152,10 +152,10 @@ function obj_grad_hess(
     θ::Vector{Float64}
     )
 
-    l = obj_grad_hess(local_posterior.local_likelihood, θ)
+    neg_likelihood_ogh = obj_grad_hess(local_posterior.local_likelihood, θ)
 
     posterior_obj_grad_hess(;
-        prior = local_posterior.prior,
+        prior = local_posterior.prior, neg_likelihood_ogh, θ
         )
     # TODO Handle cases where prior support is bounded?
     # TODO need a way to check valid proposals in simulate n_s.

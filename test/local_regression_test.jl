@@ -1,10 +1,8 @@
 using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra, ForwardDiff
 
-
 quadratic_design_matrix = SyntheticLikelihood.quadratic_design_matrix
 linear_regression = SyntheticLikelihood.linear_regression
 simulator = SyntheticLikelihood.deterministic_test_simulator
-
 
 Random.seed!(1)
 
@@ -154,32 +152,22 @@ mv_dist = MvNormal([1,2,3], sd)
 ## test posterior_obj_grad_hess matches
 
 test_θ = rand(10)
-d1 = MvNormal(rand(10), Diagonal(rand(10)))
-d2 = MvNormal(rand(10), Diagonal(rand(10)))
+prior = MvNormal(rand(10), Diagonal(rand(10)))
+likelihood = MvNormal(rand(10), Diagonal(rand(10)))
 
 # Use product of two normals to check calculation correct
+
 expected = begin
-    Σ1 = cov(d1); Σ2 = cov(d2)
-    μ1 = mean(d1); μ2 = mean(d2)
-    p1 = loglikelihood(d1, test_θ)
-    p2 = loglikelihood(d2, test_θ)
-
-    Σ3 = (Σ1^-1 + Σ2^-1)^-1
-    μ3 = Σ3*Σ1^-1*μ1 + Σ3*Σ2^-1*μ2
-
-    d3 = MvNormal(μ3, Σ3)
-    p3 = loglikelihood(d3, test_θ)
-
-    expected_∇ = gradlogpdf(d3, test_θ)
-    expected_H = ForwardDiff.hessian(θ -> loglikelihood(d3, θ), test_θ)
-    ObjGradHess(-p3, -expected_∇, -expected_H)
+    posterior = SyntheticLikelihood.analytic_mvn_posterior(prior, likelihood)
+    obj = loglikelihood(posterior, test_θ)
+    expected_∇ = gradlogpdf(posterior, test_θ)
+    expected_H = ForwardDiff.hessian(θ -> loglikelihood(posterior, θ), test_θ)
+    ObjGradHess(-obj, -expected_∇, -expected_H)
 end
 
 
-prior = d1
-likelihood = d2
-f(θ) = loglikelihood(d2, θ)
 
+f(θ) = loglikelihood(likelihood, θ)
 neg_likelihood_ogh = ObjGradHess(
     -f(test_θ),
     -ForwardDiff.gradient(f, test_θ),
