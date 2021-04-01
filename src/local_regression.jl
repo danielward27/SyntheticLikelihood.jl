@@ -100,6 +100,8 @@ end
 """
 Contains the hyperparameters for getting a local approximation
 of the posterior (using `LocalLikelihood` and a prior).
+
+$(FIELDS)
 """
 Base.@kwdef struct LocalPosterior <: LocalApproximation
     local_likelihood::LocalLikelihood

@@ -3,7 +3,7 @@ Local regressions can be used to estimate the gradient and hessian of the likeli
 which can be used to improve the sampling efficieny of synthetic likelihood.
 
 ## Example
-Here we consider a simple example, in which we infer the mean of a 10 dimensional multivariate normal distribution, using simulations from the distribution.
+Here we consider a simple example, in which we infer the mean of a 10-dimensional multivariate normal distribution, using simulations from the distribution.
 
 #### Define the simulator
 The simulator must take a single positional argument, which is the parameter vector:
@@ -17,6 +17,8 @@ function simulator(θ::Vector{Float64})
   d = MvNormal(θ, sqrt(0.1))
   rand(d)
 end
+
+nothing # hide
 ```
 
 #### Ground truth
@@ -36,6 +38,7 @@ local_likelihood = LocalLikelihood(;
   P = MvNormal(fill(0.5, 10)),
   n_sim = 1000
 )
+nothing # hide
 ```
 
 Note that if required a `summary` function can optionally be specified here, to summarise the output of the `simulator`.
@@ -45,14 +48,16 @@ We can then define how to sample from the distribution. Below I will use the [`P
 
 ```@example 1
 plangevin = PreconditionedLangevin(0.1)
+nothing # hide
 ```
 
 #### Sampling
-We can now define some initial parameter values, `init_θ`, and sample from the distribution using [`run_sampler!`](@ref)
+We can now define some initial parameter values, `init_θ`, and sample from the distribution using [`run_sampler!`](@ref):
 
 ```@example 1
 init_θ = convert(Vector{Float64}, 1:10)
 data = run_sampler!(plangevin, local_likelihood; init_θ, n_steps = 500)
+nothing # hide
 ```
 
 #### Plot the samples
@@ -68,6 +73,7 @@ Given a prior, it is also simple to sample from the posterior instead of the lik
 
 ```@example 1
 prior = MvNormal(fill(5, 10), 0.5)
+nothing # hide
 ```
 
 We can then define our objective using [`LocalPosterior`](@ref) and run the sampler again:
@@ -78,7 +84,7 @@ data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 500)
 plot(data.θ, label = param_names)
 ```
 
-Note internally, this uses [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the likelihood as before, and then uses automatic differentiation of the prior to get the gradient and hessian of the prior. These can then be used to calculcate the gradient and Hessian of the posterior.
+Note internally, this uses [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the likelihood as before, and then uses automatic differentiation of the prior to get the gradient and Hessian of the prior. These can then be used to calculcate the gradient and Hessian of the posterior.
 
 ## Currently available "objectives"
 ```@docs
