@@ -1,6 +1,17 @@
 
 abstract type LocalApproximation end
 
+"""
+Struct for containing the objective function value, along with the
+    gradient and hessian if appropriate (defualt to `nothing`).
+
+    $(FIELDS)
+"""
+Base.@kwdef struct ObjGradHess
+    objective::Float64
+    gradient::Union{AbstractVector, Nothing} = nothing
+    hessian::Union{AbstractMatrix, Nothing} = nothing
+end
 
 """
 Contains the hyperparameters for getting a local approximation
@@ -26,27 +37,10 @@ Base.@kwdef struct LocalLikelihood <: LocalApproximation
 end
 
 
-
-
-"""
-Contains the hyperparameters for getting a local approximation
-of the posterior (using `LocalLikelihood` and a prior).
-"""
-Base.@kwdef struct LocalPosterior <: LocalApproximation
-    prior::Sampleable
-    simulator::Function
-    summary::Function=identity
-    s_true::Vector{Float64}
-    P::Sampleable
-    n_sim::Integer
-    eigval_threshold::Float64 = 0.5
-end
-
-
  """
  Likelihood objective, gradient and hessian estimation using local regressions.
  """
- function likelihood_obj_grad_hess(
+ function obj_grad_hess(
       local_likelihood::LocalLikelihood,
       θ::Vector{Float64}
       )
@@ -103,38 +97,35 @@ end
 
 
 
-function obj_grad_hess(
-    local_posterior::LocalPosterior,
-    θ::Vector{Float64}
-    )
-    error("unimplemented")
-end
-
-
-
-
-
-
-
-
-
-
-## Bayesian
-
-# For Bayesian analyses we also need the gradient and hessian of -prior:
-
-function neg_prior_gradient(d::Sampleable, θ::Vector{Float64})
-    f(θ) = -loglikelihood(d, θ)
-    ForwardDiff.gradient(f, θ)
-end
-
-function neg_prior_hessian(d::Sampleable, θ::Vector{Float64})
-    f(θ) = -loglikelihood(d, θ)
-    ForwardDiff.hessian(f, θ)
+"""
+Contains the hyperparameters for getting a local approximation
+of the posterior (using `LocalLikelihood` and a prior).
+"""
+Base.@kwdef struct LocalPosterior <: LocalApproximation
+    prior::Sampleable
+    local_likelihood::LocalLikelihood
 end
 
 """
-Estimate negative log-posterior, and its gradient and hessian. Uses a local
+Get the objective, gradient and Hessian of negative log-posterior, from the prior and
+the objective, gradient and hessian of the negative log-likelihood.
+$(SIGNATURES)
+"""
+function posterior_obj_grad_hess(;
+    prior::Sampleable,
+    neg_likelihood_ogh::ObjGradHess,
+    θ::Vector{Float64}
+    )
+    obj = neg_likelihood_ogh.objective - loglikelihood(prior, θ)
+    grad = neg_likelihood_ogh.gradient - log_prior_gradient(prior, θ)
+    hess = neg_likelihood_ogh.hessian - log_prior_hessian(prior, θ)
+
+    ObjGradHess(obj, grad, hess)
+end
+
+
+"""
+Estimate negative log-posterior, and its gradient and hessian. Uses local
 regressions to first estimate the gradient and hessian of the likelihood
 function, using `local_likelihood`, then uses the chain rule to
 calculate the gradient of the posterior.
@@ -155,23 +146,41 @@ $(SIGNATURES)
 - `kwargs...` Key word arguments passed to `local_likelihood`.
 """
 
-function local_posterior(
-    θ::Vector{Float64};
-    prior::Vector{Sampleable},
-    kwargs...
+
+function obj_grad_hess(
+    local_posterior::LocalPosterior,
+    θ::Vector{Float64}
     )
-    @assert length(θ) == sum([length(p) for p in prior])
 
+    l = obj_grad_hess(local_posterior.local_likelihood, θ)
 
+    posterior_obj_grad_hess(;
+        prior = local_posterior.prior,
+        )
     # TODO Handle cases where prior support is bounded?
-
-
-    # Calculate likelihood
-
-    # TODO need a way to check valid proposals below
-    l =  local_likelihood(θ; kwargs...)
+    # TODO need a way to check valid proposals in simulate n_s.
+    # Maybe possible with Multiple dispatch with priors?
+end
 
 
 
 
+
+
+
+
+
+
+## Bayesian
+
+# For Bayesian analyses we also need the gradient and hessian of -prior:
+
+function log_prior_gradient(d::Sampleable, θ::Vector{Float64})
+    f(θ) = loglikelihood(d, θ)
+    ForwardDiff.gradient(f, θ)
+end
+
+function log_prior_hessian(d::Sampleable, θ::Vector{Float64})
+    f(θ) = loglikelihood(d, θ)
+    ForwardDiff.hessian(f, θ)
 end

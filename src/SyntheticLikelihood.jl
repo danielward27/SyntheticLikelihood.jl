@@ -25,7 +25,7 @@ export synthetic_likelihood
 
 # local regression
 export Localμ, quadratic_local_μ, LocalΣ, glm_local_Σ, local_likelihood,
-    ObjGradHess, LocalLikelihood, LocalPosterior
+    ObjGradHess, LocalApproximation, LocalLikelihood, LocalPosterior
 
 # Samplers
 export Langevin, PreconditionedLangevin, run_sampler!

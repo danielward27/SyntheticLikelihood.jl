@@ -1,4 +1,4 @@
-using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra
+using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra, ForwardDiff
 
 
 quadratic_design_matrix = SyntheticLikelihood.quadratic_design_matrix
@@ -134,8 +134,8 @@ norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
 
 ## Test automatic differentiation of priors (for product and mv dists)
 
-neg_prior_gradient = SyntheticLikelihood.neg_prior_gradient
-neg_prior_hessian = SyntheticLikelihood.neg_prior_hessian
+log_prior_gradient = SyntheticLikelihood.log_prior_gradient
+log_prior_hessian = SyntheticLikelihood.log_prior_hessian
 
 sd = 2.
 prod_dist = Product([Normal(1,sd), Normal(2,sd), Normal(3,sd)])
@@ -144,8 +144,52 @@ mv_dist = MvNormal([1,2,3], sd)
 θ = [1.,2,3]
 
 
-@test neg_prior_gradient(prod_dist, θ) ≈ [0,0,0]
-@test neg_prior_gradient(mv_dist, θ) ≈ [0,0,0]
+@test log_prior_gradient(prod_dist, θ) ≈ [0,0,0]
+@test log_prior_gradient(mv_dist, θ) ≈ [0,0,0]
 
-@test neg_prior_hessian(mv_dist, θ) ≈ Diagonal(fill(1/sd^2, 3))
-@test neg_prior_hessian(prod_dist, θ) ≈ Diagonal(fill(1/sd^2, 3))
+@test log_prior_hessian(mv_dist, θ) ≈ -Diagonal(fill(1/sd^2, 3))
+@test log_prior_hessian(prod_dist, θ) ≈ -Diagonal(fill(1/sd^2, 3))
+
+
+## test posterior_obj_grad_hess matches
+
+test_θ = rand(10)
+d1 = MvNormal(rand(10), Diagonal(rand(10)))
+d2 = MvNormal(rand(10), Diagonal(rand(10)))
+
+# Use product of two normals to check calculation correct
+expected = begin
+    Σ1 = cov(d1); Σ2 = cov(d2)
+    μ1 = mean(d1); μ2 = mean(d2)
+    p1 = loglikelihood(d1, test_θ)
+    p2 = loglikelihood(d2, test_θ)
+
+    Σ3 = (Σ1^-1 + Σ2^-1)^-1
+    μ3 = Σ3*Σ1^-1*μ1 + Σ3*Σ2^-1*μ2
+
+    d3 = MvNormal(μ3, Σ3)
+    p3 = loglikelihood(d3, test_θ)
+
+    expected_∇ = gradlogpdf(d3, test_θ)
+    expected_H = ForwardDiff.hessian(θ -> loglikelihood(d3, θ), test_θ)
+    ObjGradHess(-p3, -expected_∇, -expected_H)
+end
+
+
+prior = d1
+likelihood = d2
+f(θ) = loglikelihood(d2, θ)
+
+neg_likelihood_ogh = ObjGradHess(
+    -f(test_θ),
+    -ForwardDiff.gradient(f, test_θ),
+    -ForwardDiff.hessian(f, test_θ),
+)
+
+actual = SyntheticLikelihood.posterior_obj_grad_hess(;
+    prior, neg_likelihood_ogh, θ = test_θ
+    )
+
+@test actual.objective != expected.objective  # Proportional
+@test actual.gradient ≈ expected.gradient  # Independent of p(x)
+@test actual.hessian ≈ expected.hessian  # Independent of p(x)
