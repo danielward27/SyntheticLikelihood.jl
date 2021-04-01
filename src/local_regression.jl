@@ -26,14 +26,14 @@ Base.@kwdef struct LocalLikelihood <: LocalApproximation
     summary::Function=identity
     "The observed summary statistics."
     s_true::Vector{Float64}
-    "Distribution used to peturb parameter value"
+    "Distribution used to peturb the parameter value"
     P::Sampleable
     "The number of peturbed points to use for the local regression."
     n_sim::Integer
     """Minimum eigenvalue threshold for the estimated hessian. Negative
     eigenvalues are flipped and those smaller than the threshold are
     set to the threshold."""
-    eigval_threshold::Float64 = 0.5
+    eigval_threshold::Float64 = 0.2
 end
 
 
