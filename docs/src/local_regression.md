@@ -1,9 +1,9 @@
 # Local regression
-Local regressions can be used to estimate the gradient and hessian of the likelihood using [`LocalLikelihood`](@ref).
-
-Below is a basic example, in which we infer the mean of a 10 dimensional multivariate normal distribution, using simulations from the distribution.
+Local regressions can be used to estimate the gradient and hessian of the likelihood,
+which can be used to improve the sampling efficieny of synthetic likelihood.
 
 ## Example
+Here we consider a simple example, in which we infer the mean of a 10 dimensional multivariate normal distribution, using simulations from the distribution.
 
 #### Define the simulator
 The simulator must take a single positional argument, which is the parameter vector:
@@ -38,7 +38,7 @@ local_likelihood = LocalLikelihood(;
 )
 ```
 
-Note that if required a `summary` function can also be specified here, to summarise the output of the `simulator`.
+Note that if required a `summary` function can optionally be specified here, to summarise the output of the `simulator`.
 
 #### Defining sampling method
 We can then define how to sample from the distribution. Below I will use the [`PreconditionedLangevin`](@ref) sampler with a step size of 0.1.
@@ -48,7 +48,7 @@ plangevin = PreconditionedLangevin(0.1)
 ```
 
 #### Sampling
-We can now define some initial parameter values, `init_θ`, and sample from the distribution:
+We can now define some initial parameter values, `init_θ`, and sample from the distribution using [`run_sampler!`](@ref)
 
 ```@example 1
 init_θ = convert(Vector{Float64}, 1:10)
@@ -77,6 +77,8 @@ local_posterior = LocalPosterior(local_likelihood, prior)
 data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 500)
 plot(data.θ, label = param_names)
 ```
+
+Note internally, this uses [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the likelihood as before, and then uses automatic differentiation of the prior to get the gradient and hessian of the prior. These can then be used to calculcate the gradient and Hessian of the posterior.
 
 ## Currently available "objectives"
 ```@docs
