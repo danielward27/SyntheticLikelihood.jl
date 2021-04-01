@@ -47,6 +47,5 @@ Note that here a determinisic `obj_grad_hess` function is used. Generally, in si
 ## Implementation details
 To implement a new sampler, each sampler must:
 - Be a subtype of `AbstractSampler`.
-- Have fields `obj_grad_hess` and `kwargs` (that are passed to `obj_grad_hess`).
-- Have a `get_init_state` method, which returns a SamplerState object given `init_θ` e.g. with signature `get_init_state(sampler::MySampler, init_θ::Vector{Float64})`.
-- Have an `update!` method, taking the sampler and the `SamplerState` object, e.g. `update!(sampler::MySampler, state::SamplerState)`. This updates the state (parameters, gradients objective function value etc, and sampler object if applicable).
+- Have fields containing the hyperparameters.
+- Have an `update!` method, taking the sampler the `LocalApproximation` and the `SamplerState` object as arguments e.g. `update!(sampler::MySampler, local_approximation::LocalApproximation, state::SamplerState)`. This updates the state (parameters, gradients objective function value etc, and sampler object if applicable).

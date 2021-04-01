@@ -44,7 +44,11 @@ mutable struct Langevin <: AbstractSampler
 end
 
 
-function update!(sampler::Langevin, local_approximation, state::SamplerState)
+function update!(
+    sampler::Langevin,
+    local_approximation::LocalApproximation,
+    state::SamplerState
+    )
     η, θ, ∇  = sampler.step_size, state.θ, state.gradient
     ξ = rand(MvNormal(length(θ) , sqrt(η)))
     state.θ = θ .- η ./ 2 .* ∇ .+ ξ

@@ -52,7 +52,7 @@ nothing # hide
 ```
 
 #### Sampling
-We can now define some initial parameter values, `init_θ`, and sample from the distribution using [`run_sampler!`](@ref)
+We can now define some initial parameter values, `init_θ`, and sample from the distribution using [`run_sampler!`](@ref):
 
 ```@example 1
 init_θ = convert(Vector{Float64}, 1:10)
@@ -73,6 +73,7 @@ Given a prior, it is also simple to sample from the posterior instead of the lik
 
 ```@example 1
 prior = MvNormal(fill(5, 10), 0.5)
+nothing # hide
 ```
 
 We can then define our objective using [`LocalPosterior`](@ref) and run the sampler again:
