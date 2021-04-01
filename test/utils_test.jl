@@ -18,7 +18,7 @@ sample_cov = cov(peturbed)
 stack_arrays = SyntheticLikelihood.stack_arrays
 VV = Vector([[1, 2], [3, 4], [5, 6]]) #VecVec
 AV = Vector([[1 1; 1 1], [2 2; 2 2], [1 2; 3 4]])  # ArrayVec
-VV
+
 AV_expected = Array{Int64}(undef, (3,2,2))
 AV_expected[1, :, :] = fill(1, 2, 2)
 AV_expected[2, :, :] = fill(2, 2, 2)

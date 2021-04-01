@@ -9,12 +9,13 @@ using ForwardDiff
 
 import Base.@kwdef
 
-include("simulation_interface.jl")
-include("likelihood.jl")
+include("quadratic_local_regression.jl")
+include("glm_local_regression.jl")
+include("local_regression.jl")
 include("samplers.jl")
 include("utils.jl")
-include("local_regression.jl")
-
+include("data_collector.jl")
+include("simulate_n_s.jl")
 
 # simulation interface
 export simulate_n_s
@@ -23,8 +24,8 @@ export simulate_n_s
 export synthetic_likelihood
 
 # local regression
-export quadratic_design_matrix, linear_regression, Localμ, quadratic_local_μ,
- get_residuals, LocalΣ, glm_local_Σ, local_synthetic_likelihood, ObjGradHess
+export Localμ, quadratic_local_μ, LocalΣ, glm_local_Σ, local_likelihood,
+    ObjGradHess, LocalApproximation, LocalLikelihood, LocalPosterior
 
 # Samplers
 export Langevin, PreconditionedLangevin, run_sampler!
