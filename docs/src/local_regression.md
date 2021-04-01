@@ -17,6 +17,8 @@ function simulator(θ::Vector{Float64})
   d = MvNormal(θ, sqrt(0.1))
   rand(d)
 end
+
+nothing # hide
 ```
 
 #### Ground truth
@@ -36,6 +38,7 @@ local_likelihood = LocalLikelihood(;
   P = MvNormal(fill(0.5, 10)),
   n_sim = 1000
 )
+nothing # hide
 ```
 
 Note that if required a `summary` function can optionally be specified here, to summarise the output of the `simulator`.
@@ -45,6 +48,7 @@ We can then define how to sample from the distribution. Below I will use the [`P
 
 ```@example 1
 plangevin = PreconditionedLangevin(0.1)
+nothing # hide
 ```
 
 #### Sampling
@@ -53,6 +57,7 @@ We can now define some initial parameter values, `init_θ`, and sample from the 
 ```@example 1
 init_θ = convert(Vector{Float64}, 1:10)
 data = run_sampler!(plangevin, local_likelihood; init_θ, n_steps = 500)
+nothing # hide
 ```
 
 #### Plot the samples
