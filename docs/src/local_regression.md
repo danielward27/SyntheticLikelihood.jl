@@ -3,7 +3,7 @@ Local regressions can be used to estimate the gradient and hessian of the likeli
 which can be used to improve the sampling efficieny of synthetic likelihood.
 
 ## Example
-Here we consider a simple example, in which we infer the mean of a 10 dimensional multivariate normal distribution, using simulations from the distribution.
+Here we consider a simple example, in which we infer the mean of a 10-dimensional multivariate normal distribution, using simulations from the distribution.
 
 #### Define the simulator
 The simulator must take a single positional argument, which is the parameter vector:
