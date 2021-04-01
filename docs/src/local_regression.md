@@ -78,7 +78,7 @@ data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 500)
 plot(data.θ, label = param_names)
 ```
 
-Note internally, this uses [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the likelihood as before, and then uses automatic differentiation of the prior to get the gradient and hessian of the prior. These can then be used to calculcate the gradient and Hessian of the posterior.
+Note internally, this uses [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the likelihood as before, and then uses automatic differentiation of the prior to get the gradient and Hessian of the prior. These can then be used to calculcate the gradient and Hessian of the posterior.
 
 ## Currently available "objectives"
 ```@docs
