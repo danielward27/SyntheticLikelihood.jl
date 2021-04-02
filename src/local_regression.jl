@@ -16,21 +16,28 @@ end
  """
  Likelihood objective, gradient and hessian estimation using local regressions.
  """
- function obj_grad_hess(local_likelihood::LocalLikelihood, θ::Vector{Float64})
-      θᵢ = θ
-      ll = local_likelihood
-      θ = peturb(θᵢ, ll.P, ll.n_sim)
-      s = simulate_n_s(θ; ll.simulator, ll.summary)
-      s = remove_invariant(s)
-      μ = quadratic_local_μ(; θᵢ, θ, s)
-      Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
-      l = likelihood_obj_grad_hess(μ, Σ, ll.s_true)
-      l.hessian .= ensure_posdef(l.hessian, ll.eigval_threshold)
-      l
+ function obj_grad_hess(
+     local_likelihood::LocalLikelihood,
+     θ::Vector{Float64}
+     )
+     θᵢ = θ
+     ll = local_likelihood
+     θ = peturb(θᵢ, ll.P, ll.n_sim)
+     s = simulate_n_s(θ; ll.simulator, ll.summary)
+     s = remove_invariant(s)
+     μ = quadratic_local_μ(; θᵢ, θ, s)
+     Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
+     l = likelihood_ogh(μ, Σ, ll.s_true)
+     l.hessian .= ensure_posdef(l.hessian, ll.eigval_threshold)
+     l
  end
 
-# Note this does not ensure positive definiteness
- function likelihood_obj_grad_hess(
+
+"""
+Use results from local regressions to estimate the negative log-likelihood
+function value, gradient and hessian.
+"""
+ function likelihood_ogh(
      μ::Localμ, Σ::LocalΣ,
      s_true::Vector{Float64})
    sᵒ = s_true
@@ -68,20 +75,11 @@ end
 end
 
 
-
-
-
-
-
-
-
 """
-Get the objective, gradient and Hessian of negative log-posterior, from the prior and
-the objective, gradient and hessian of the negative log-likelihood.
-
-$(SIGNATURES)
+Get the posterior, gradient and Hessian of negative log-posterior, from the
+prior and the objective, gradient and hessian of the negative log-likelihood.
 """
-function posterior_obj_grad_hess(;
+function posterior_ogh(
     prior::Sampleable,
     neg_likelihood_ogh::ObjGradHess,
     θ::Vector{Float64}
@@ -93,42 +91,27 @@ function posterior_obj_grad_hess(;
 end
 
 
-"""
-Estimate negative log-posterior, and its gradient and hessian. Uses local
-regressions to first estimate the gradient and hessian of the likelihood
-function, using `local_likelihood`, then uses the chain rule to
-calculate the gradient of the posterior.
 
-Prior gradient and hessian are calculated with
-[ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl). Univariate priors
-can be specified using a `Product` distribution from Distributions.jl.
-Or a multivariate prior can be specified using a multivariate distribution
-Distributions.jl.
+"""
+Estimate negative log-posterior, and its gradient and hessian. This is achieved
+by pairing a likelihood estimation from local regressions with the prior
+density, gradient and hessian (calculated with
+[ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)).
 
 $(SIGNATURES)
 
 ## Arguments
-- `θ` Starting parameter values.
-- `prior` A vector of distributions (from Distributions package). Note that
-    the distributions can be univariate or multivariate, but the overall dimension
-    must match that of the θ (and the order must be consistent).
-- `kwargs...` Key word arguments passed to `local_likelihood`.
+- `local_posterior` Parameter value to evaluate.
+- `θ` Distribution from Distributions.jl package.
 """
-
-
 function obj_grad_hess(
     local_posterior::LocalPosterior,
     θ::Vector{Float64}
     )
-
     neg_likelihood_ogh = obj_grad_hess(LocalLikelihood(local_posterior), θ)
-
-    posterior_obj_grad_hess(;
-        prior = local_posterior.prior, neg_likelihood_ogh, θ
-        )
+    posterior_ogh(local_posterior.prior, neg_likelihood_ogh, θ)
     # TODO Handle cases where prior support is bounded?
     # TODO need a way to check valid proposals in simulate n_s.
-    # Maybe possible with Multiple dispatch with priors?
 end
 
 
