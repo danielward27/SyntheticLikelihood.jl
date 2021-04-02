@@ -79,7 +79,7 @@ nothing # hide
 We can then define our objective using [`LocalPosterior`](@ref) and run the sampler again:
 
 ```@example 1
-local_posterior = LocalPosterior(local_likelihood, prior)
+local_posterior = LocalPosterior(prior, local_likelihood)
 data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 500)
 plot(data.θ, label = param_names)
 ```
