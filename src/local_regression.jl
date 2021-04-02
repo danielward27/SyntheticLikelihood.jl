@@ -9,8 +9,8 @@ Struct for containing the objective function value, along with the
 """
 Base.@kwdef struct ObjGradHess
     objective::Float64
-    gradient::Union{AbstractVector, Nothing} = nothing
-    hessian::Union{AbstractMatrix, Nothing} = nothing
+    gradient::Union{Vector{Float64}, Nothing} = nothing
+    hessian::Union{Symmetric{Float64}, Nothing} = nothing
 end
 
 """
@@ -19,15 +19,15 @@ of the negative log-likelihood surface using local regressions.
 
 $(FIELDS)
 """
-Base.@kwdef struct LocalLikelihood <: LocalApproximation
+Base.@kwdef mutable struct LocalLikelihood <: LocalApproximation
     "The simulator function taking parameter vector θ."
     simulator::Function
     "The summary function taking output from the simulator."
     summary::Function=identity
     "The observed summary statistics."
     s_true::Vector{Float64}
-    "Distribution used to peturb the parameter value"
-    P::Sampleable
+    "Distribution used to peturb the parameter value."
+    P::AbstractMvNormal
     "The number of peturbed points to use for the local regression."
     n_sim::Integer
     """Minimum eigenvalue threshold for the estimated hessian. Negative
@@ -37,13 +37,15 @@ Base.@kwdef struct LocalLikelihood <: LocalApproximation
 end
 
 
+function update_P!(local_likelihood::LocalLikelihood, P::AbstractMvNormal)
+    local_likelihood.P = P
+end
+
+
  """
  Likelihood objective, gradient and hessian estimation using local regressions.
  """
- function obj_grad_hess(
-      local_likelihood::LocalLikelihood,
-      θ::Vector{Float64}
-      )
+ function obj_grad_hess(local_likelihood::LocalLikelihood, θ::Vector{Float64})
       θᵢ = θ
       ll = local_likelihood
       θ = peturb(θᵢ, ll.P, ll.n_sim)
@@ -51,14 +53,22 @@ end
       s = remove_invariant(s)
       μ = quadratic_local_μ(; θᵢ, θ, s)
       Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
-      l = likelihood_obj_grad_hess(μ, Σ, ll.s_true; ll.eigval_threshold)
+      l = likelihood_obj_grad_hess(μ, Σ, ll.s_true)
+
+      before = deepcopy(l.hessian)
+      l.hessian .= ensure_posdef(l.hessian, ll.eigval_threshold)
+      after = l.hessian
+      println(isposdef(before), isposdef(after))
+      if !isposdef(after)
+          print(eigvals(after))
+      end
       l
  end
 
+# Note this does not ensure positive definiteness
  function likelihood_obj_grad_hess(
      μ::Localμ, Σ::LocalΣ,
-     s_true::Vector{Float64};
-     eigval_threshold::Float64)
+     s_true::Vector{Float64})
    sᵒ = s_true
    n_θ = size(μ.∂, 2)
    ∂ = Vector{Float64}(undef, n_θ)
@@ -85,17 +95,13 @@ end
       )
   end end
   ∂² = Symmetric(∂²)
-  neg_∂² = ensure_posdef(-∂², eigval_threshold)
 
-  # Evaluate likelihood
+  # Evaluate synthetic likelihood
   mvn = MvNormal(μ.μ, Σ.Σ)
   l = logpdf(mvn, sᵒ)
 
-  return ObjGradHess(-l, -∂, neg_∂²)
+  return ObjGradHess(-l, -∂, -∂²)
 end
-
-
-
 
 """
 Contains the hyperparameters for getting a local approximation
@@ -108,9 +114,14 @@ Base.@kwdef struct LocalPosterior <: LocalApproximation
     prior::Sampleable
 end
 
+function update_P!(local_posterior::LocalPosterior, P::AbstractMvNormal)
+    local_posterior.local_likelihood.P = P
+end
+
 """
 Get the objective, gradient and Hessian of negative log-posterior, from the prior and
 the objective, gradient and hessian of the negative log-likelihood.
+
 $(SIGNATURES)
 """
 function posterior_obj_grad_hess(;

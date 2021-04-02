@@ -9,8 +9,8 @@ Struct for containing the state of sampler at a particular iteration.
 Base.@kwdef mutable struct SamplerState
     θ::AbstractVector{Float64}
     objective::Float64
-    gradient::Union{AbstractVector, Nothing} = nothing
-    hessian::Union{AbstractMatrix, Nothing} = nothing
+    gradient::Union{Vector{Float64}, Nothing} = nothing
+    hessian::Union{Symmetric{Float64}, Nothing} = nothing
     counter::Integer = 0
 end
 
@@ -26,6 +26,7 @@ function get_init_state(
     ogh = obj_grad_hess(local_approximation, init_θ)
     SamplerState(init_θ, ogh)
 end
+
 
 
 #------ Sampling algorithms -------
@@ -91,8 +92,12 @@ function update!(
     state.objective = ogh.objective
     state.gradient = ogh.gradient
     state.hessian = ogh.hessian
+    # update_P!(local_approximation, MvNormalCanon(ogh.hessian))
+    update_P!(local_approximation, MvNormal(fill(0.5, 10)))
     state.counter += 1
 end
+
+
 
 
 #---- Run the sampling algorithm ----
@@ -122,3 +127,8 @@ function run_sampler!(
     end
     simplify_data(data)
 end
+
+
+
+# P_from_objective_hessian
+# Note this is the same as Σ^-1
