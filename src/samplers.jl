@@ -92,8 +92,9 @@ function update!(
     state.objective = ogh.objective
     state.gradient = ogh.gradient
     state.hessian = ogh.hessian
+    # println(minimum(eigvals(ogh.hessian)), " ", maximum(eigvals(ogh.hessian)))
     # update_P!(local_approximation, MvNormalCanon(ogh.hessian))
-    update_P!(local_approximation, MvNormal(fill(0.5, 10)))
+    # update_P!(local_approximation, MvNormal(fill(0.5, 10)))
     state.counter += 1
 end
 

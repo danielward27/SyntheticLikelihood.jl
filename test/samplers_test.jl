@@ -21,7 +21,7 @@ local_likelihood = LocalLikelihood(;
 )
 
 prior = MvNormal(fill(5, 10), 0.3)
-local_posterior = LocalPosterior(local_likelihood, prior)
+local_posterior = LocalPosterior(prior, local_likelihood)
 
 plangevin = PreconditionedLangevin(0.1)
 
