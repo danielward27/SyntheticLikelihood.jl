@@ -59,7 +59,7 @@ Flips negative eiugnvalues then ensure all greater than threshold.
 """
 function ensure_posdef(M::Symmetric, threshold::Float64)
   M = eigen(M)
-  M.values[:] = abs.(M.values)
+  M.values .= abs.(M.values)
   M.values[M.values .< threshold] .= threshold
   Symmetric(Matrix(M))
 end
