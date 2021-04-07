@@ -53,17 +53,6 @@ function remove_invariant(s; warn=true)
 end
 
 
-"""
-Make matrix positive definite using eigen decomposition.
-Flips negative eiugnvalues then ensure all greater than threshold.
-"""
-function ensure_posdef(M::Symmetric, threshold::Float64)
-  M = eigen(M)
-  M.values .= abs.(M.values)
-  M.values[M.values .< threshold] .= threshold
-  Symmetric(Matrix(M))
-end
-
 
 
 ## For testing:
@@ -89,4 +78,42 @@ function analytic_mvn_posterior(
   Σ = (Σ1^-1 + Σ2^-1)^-1
   μ = Σ*Σ1^-1*μ1 + Σ*Σ2^-1*μ2
   MvNormal(μ, Σ)
+end
+
+"""
+Convert covariance matrix to correlation matrix.
+"""
+function cov_to_cor(Σ::AbstractMatrix)
+    σ = .√diag(Σ)
+    Symmetric(diagm(1 ./ σ) * Σ * diagm(1 ./ σ))
+end
+
+"""
+Convert correlation matrix to covariance matrix.
+"""
+function cor_to_cov(R::AbstractMatrix, σ²::AbstractVector)
+    σ = .√σ²
+    Symmetric(diagm(σ) * R * diagm(σ))
+end
+
+
+"""
+Used to store and print information about an object. Useful for printing neat
+debugging messages.
+"""
+Base.@kwdef mutable struct ObjectSummaryLogger
+  summaries::Vector{Function}
+  data::Array{Any} = Matrix{Any}(undef, 0, length(summaries)+1)
+end
+
+function add_log!(logger::ObjectSummaryLogger, tag::String, M::AbstractMatrix)
+  row = [f(M) for f in logger.summaries]
+  row = permutedims([tag; row])
+  logger.data = [logger.data; row]
+end
+
+function get_pretty_table(logger::ObjectSummaryLogger)
+  colnames = [string(f) for f in logger.summaries]
+  colnames = ["tag"; colnames]
+  pretty_table(logger.data, colnames)
 end

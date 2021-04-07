@@ -8,7 +8,7 @@ are the symbols provided.
 
 """
 function init_data_tuple(
-    state::SamplerState,
+    state::AbstractSamplerState,
     collect_data::Vector{Symbol},
     n_steps::Integer)
 
@@ -26,7 +26,7 @@ end
 Add data to the data tuple.
 """
 function add_state!(
-    data::NamedTuple, state::SamplerState, idx::Integer)
+    data::NamedTuple, state::AbstractSamplerState, idx::Integer)
     for symbol in keys(data)
         field = getproperty(state, symbol)
         data[symbol][idx] = field
