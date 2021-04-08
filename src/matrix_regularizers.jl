@@ -50,7 +50,7 @@ function regularize(H::Symmetric, method::KitchenSink)
     P = cov_det_reg(P, ref)
     add_log!(logger, "After scaling determinant", P)
 
-    # Regularize correlation matrix
+    # # Regularize correlation matrix
     σ² = diag(P)
     R = cov_to_cor(P)
     R = cor_cond_threshold(R, c)
@@ -59,22 +59,21 @@ function regularize(H::Symmetric, method::KitchenSink)
 
     add_log!(logger, "After modifying correlation", P)
 
-    # Limit variance
-    upper_σ²_lim = 1
-    lower_σ²_lim = 0.1
+    # # Limit variance
+    # upper_σ²_lim = 100
+    # lower_σ²_lim = 0.01
 
-    ref_σ² = diag(ref)
-    upper_σ² = upper_σ²_lim*ref_σ²
-    lower_σ² = lower_σ²_lim*ref_σ²
-    σ²[σ² .> upper_σ²] = upper_σ²[σ² .> upper_σ²]
-    σ²[σ² .< lower_σ²] = lower_σ²[σ² .< lower_σ²]
+    # ref_σ² = diag(ref)
+    # upper_σ² = upper_σ²_lim*ref_σ²
+    # lower_σ² = lower_σ²_lim*ref_σ²
+    # σ²[σ² .> upper_σ²] = upper_σ²[σ² .> upper_σ²]
+    # σ²[σ² .< lower_σ²] = lower_σ²[σ² .< lower_σ²]
 
-    P = cor_to_cov(P, σ²)
-    add_log!(logger, "After modifying variances", P)
+    # P = cor_to_cov(P, σ²)
+    # add_log!(logger, "After modifying variances", P)
 
     @debug "$(get_pretty_table(logger))"
 
-    # Final mean var = $(mean(diag(P))). Mean covar (off-diag) $(mean_off_diag(P))
     P
 end
 

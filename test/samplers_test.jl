@@ -13,24 +13,22 @@ s_true = simulator(θ_true)
 
 local_likelihood = LocalLikelihood(;
   simulator, s_true,
-  P = MvNormal(fill(0.5, 10)),
+  init_P = MvNormal(fill(0.5, 10)),
   n_sim = 1000,
 )
-
-prior = MvNormal(fill(5, 10), 0.3)
-local_posterior = LocalPosterior(local_likelihood, prior)
 
 plangevin = PreconditionedLangevin(0.1)
 
 init_θ = fill(5., 10)
 
-data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 500)
+data = run_sampler!(plangevin, local_likelihood; init_θ, n_steps = 500)
+θ = data[:θ][101:end, :] # Remove burn in
+
+
+data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 100)
 θ = data[:θ][101:end, :] # Remove burn in
 
 likelihood = MvNormal(θ_true, sqrt(0.1))
 expected = SyntheticLikelihood.analytic_mvn_posterior(prior, likelihood)
 
 @test isapprox(mean(expected), mean.(eachcol(θ)); atol = 1.5)
-
-# Just check runs as likelihood is tested within posterior example.
-check_runs = run_sampler!(plangevin, local_likelihood; init_θ, n_steps = 1)

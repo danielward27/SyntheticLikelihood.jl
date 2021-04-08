@@ -55,7 +55,7 @@ function glm_local_Σ(;
     # Get coefficients of GLM
     coefs = Array{Float64}(undef, nₛ, n_θ+1)
     for i in 1:nₛ
-        coefs[i, :] = coef(glm(θ, ϵ²[:, i], Gamma(), LogLink()))  # TODO: Add weights?
+        coefs[i, :] = coef(glm(θ, ϵ²[:, i], Gamma(), LogLink(), maxiter=1000))  # TODO: Add weights?
     end
 
     ϕ = coefs[:, 1]  # exp(ϕ) gives variance estimates
