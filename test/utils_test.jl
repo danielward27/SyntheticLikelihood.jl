@@ -43,3 +43,26 @@ A = ensure_posdef(A, threshold)
 
 remove_invariant = SyntheticLikelihood.remove_invariant
 @test remove_invariant([1 1 1; 2 1 2]; warn=false) ==  [1 1; 2 2]
+
+cov_to_cor = SyntheticLikelihood.cov_to_cor
+A = rand(3,3); A = A'A + I
+σ² = diag(A)
+
+R = cov_to_cor(A)
+@test diag(R) ≈ ones(3)
+
+cor_to_cov = SyntheticLikelihood.cor_to_cov
+@test A ≈ cor_to_cov(R, σ²)
+
+## Test the object summary logger
+ObjectSummaryLogger = SyntheticLikelihood.ObjectSummaryLogger
+add_log! = SyntheticLikelihood.add_log!
+get_pretty_table = SyntheticLikelihood.get_pretty_table
+
+logger = ObjectSummaryLogger(summaries = [cond, det])
+A = diagm(ones(3))
+add_log!(logger, "A summary", A)
+
+B = diagm(fill(2,3))
+add_log!(logger, "B summary", B)
+@test logger.data == ["A summary" 1.0 1.0; "B summary" 1.0 8.0]

@@ -1,5 +1,3 @@
-using SyntheticLikelihood, Test, Random, Distributions
-
 # Test posterior example. If this works then likelihood should too.
 using SyntheticLikelihood, Test, Random, Distributions
 seed = Random.seed!(1)
@@ -17,11 +15,10 @@ local_likelihood = LocalLikelihood(;
   simulator, s_true,
   P = MvNormal(fill(0.5, 10)),
   n_sim = 1000,
-  eigval_threshold = 0.1
 )
 
 prior = MvNormal(fill(5, 10), 0.3)
-local_posterior = LocalPosterior(prior, local_likelihood)
+local_posterior = LocalPosterior(local_likelihood, prior)
 
 plangevin = PreconditionedLangevin(0.1)
 
