@@ -7,11 +7,10 @@ abstract type AbstractRegularizer end
 # TODO Update these docs
 """
 Carries out the following steps:
-1. Use [`soft_abs`](@ref) to get absolute values of the eigenvalues.
-2. Invert hessian to get covariance matrix.
+1. Use `soft_abs` to get absolute values of the eigenvalues.
 3. Decompose the covariance into the variance and correlation.
 4. Divide the correlation matrix by a constant to reach condition criteria.
-5. Set non diagonal correlation to zero if <τ
+5. Set non diagonal correlation to zero if < τ
 6. Scale so that the determinant matches a reference distribution.
 
 See http://parker.ad.siu.edu/Olive/slch6.pdf

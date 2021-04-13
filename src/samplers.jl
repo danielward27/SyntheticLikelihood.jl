@@ -84,12 +84,13 @@ function update!(
     @unpack gradient, θ, hessian = state
 
     la = local_approximation
+
     H⁻¹ = state.hessian^-1
     H⁻¹ = regularize(H⁻¹, la.P_regularizer)
     la.P = MvNormal(H⁻¹)
 
     z = randn(length(θ))
-    state.θ = θ .- (ϵ^2 .*H⁻¹*∇)/2 .- ϵ*sqrt(H⁻¹) \ z
+    state.θ = θ .- (ϵ^2 .* H⁻¹*∇ )/2 .- ϵ*sqrt(H⁻¹) * z
 
     ogh = obj_grad_hess(la, state.θ)
     state.objective = ogh.objective
