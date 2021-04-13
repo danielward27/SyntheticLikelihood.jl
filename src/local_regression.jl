@@ -1,5 +1,4 @@
 
-abstract type LocalApproximation end
 
 """
 Struct for containing the objective function value, along with the
@@ -9,56 +8,40 @@ Struct for containing the objective function value, along with the
 """
 Base.@kwdef struct ObjGradHess
     objective::Float64
-    gradient::Union{AbstractVector, Nothing} = nothing
-    hessian::Union{AbstractMatrix, Nothing} = nothing
-end
-
-"""
-Contains the hyperparameters for getting a local approximation
-of the negative log-likelihood surface using local regressions.
-
-$(FIELDS)
-"""
-Base.@kwdef struct LocalLikelihood <: LocalApproximation
-    "The simulator function taking parameter vector θ."
-    simulator::Function
-    "The summary function taking output from the simulator."
-    summary::Function=identity
-    "The observed summary statistics."
-    s_true::Vector{Float64}
-    "Distribution used to peturb the parameter value"
-    P::Sampleable
-    "The number of peturbed points to use for the local regression."
-    n_sim::Integer
-    """Minimum eigenvalue threshold for the estimated hessian. Negative
-    eigenvalues are flipped and those smaller than the threshold are
-    set to the threshold."""
-    eigval_threshold::Float64 = 0.2
+    gradient::Union{Vector{Float64}, Nothing} = nothing
+    hessian::Union{Symmetric{Float64}, Nothing} = nothing
 end
 
 
  """
- Likelihood objective, gradient and hessian estimation using local regressions.
+ Negative log-likelihood objective, gradient and hessian estimation using local
+ regressions. Note that this does not ensure positive definiteness of the
+ Hessian.
  """
- function obj_grad_hess(
-      local_likelihood::LocalLikelihood,
-      θ::Vector{Float64}
-      )
-      θᵢ = θ
-      ll = local_likelihood
-      θ = peturb(θᵢ, ll.P, ll.n_sim)
-      s = simulate_n_s(θ; ll.simulator, ll.summary)
-      s = remove_invariant(s)
-      μ = quadratic_local_μ(; θᵢ, θ, s)
-      Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
-      l = likelihood_obj_grad_hess(μ, Σ, ll.s_true; ll.eigval_threshold)
-      l
+ function likelihood_obj_grad_hess(
+     local_approximation::LocalApproximation,
+     θ::Vector{Float64}
+     )
+     @unpack simulator, summary, P, n_sim, s_true = local_approximation
+     θᵢ = θ
+     θ = peturb(θᵢ, P, n_sim)
+     s = simulate_n_s(θ; simulator, summary)
+     s, s_true = remove_invariant(s, s_true)
+     s, s_true = standardize(s, s_true)
+     μ = quadratic_local_μ(; θᵢ, θ, s)
+     Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
+     l = likelihood_calc(μ, Σ, s_true)
+     l
  end
 
- function likelihood_obj_grad_hess(
+
+"""
+Use results from local regressions to estimate the negative log-likelihood
+function value, gradient and hessian.
+"""
+ function likelihood_calc(
      μ::Localμ, Σ::LocalΣ,
-     s_true::Vector{Float64};
-     eigval_threshold::Float64)
+     s_true::Vector{Float64})
    sᵒ = s_true
    n_θ = size(μ.∂, 2)
    ∂ = Vector{Float64}(undef, n_θ)
@@ -85,35 +68,20 @@ end
       )
   end end
   ∂² = Symmetric(∂²)
-  neg_∂² = ensure_posdef(-∂², eigval_threshold)
 
-  # Evaluate likelihood
+  # Evaluate synthetic likelihood
   mvn = MvNormal(μ.μ, Σ.Σ)
   l = logpdf(mvn, sᵒ)
 
-  return ObjGradHess(-l, -∂, neg_∂²)
+  return ObjGradHess(-l, -∂, -∂²)
 end
 
 
-
-
 """
-Contains the hyperparameters for getting a local approximation
-of the posterior (using `LocalLikelihood` and a prior).
-
-$(FIELDS)
+Get the posterior, gradient and Hessian of negative log-posterior, from the
+prior and the objective, gradient and hessian of the negative log-likelihood.
 """
-Base.@kwdef struct LocalPosterior <: LocalApproximation
-    local_likelihood::LocalLikelihood
-    prior::Sampleable
-end
-
-"""
-Get the objective, gradient and Hessian of negative log-posterior, from the prior and
-the objective, gradient and hessian of the negative log-likelihood.
-$(SIGNATURES)
-"""
-function posterior_obj_grad_hess(;
+function posterior_calc(
     prior::Sampleable,
     neg_likelihood_ogh::ObjGradHess,
     θ::Vector{Float64}
@@ -121,48 +89,29 @@ function posterior_obj_grad_hess(;
     obj = neg_likelihood_ogh.objective - loglikelihood(prior, θ)
     grad = neg_likelihood_ogh.gradient - log_prior_gradient(prior, θ)
     hess = neg_likelihood_ogh.hessian - log_prior_hessian(prior, θ)
-
     ObjGradHess(obj, grad, hess)
 end
 
 
 """
-Estimate negative log-posterior, and its gradient and hessian. Uses local
-regressions to first estimate the gradient and hessian of the likelihood
-function, using `local_likelihood`, then uses the chain rule to
-calculate the gradient of the posterior.
-
-Prior gradient and hessian are calculated with
-[ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl). Univariate priors
-can be specified using a `Product` distribution from Distributions.jl.
-Or a multivariate prior can be specified using a multivariate distribution
-Distributions.jl.
-
-$(SIGNATURES)
-
-## Arguments
-- `θ` Starting parameter values.
-- `prior` A vector of distributions (from Distributions package). Note that
-    the distributions can be univariate or multivariate, but the overall dimension
-    must match that of the θ (and the order must be consistent).
-- `kwargs...` Key word arguments passed to `local_likelihood`.
+Estimate negative log-likelihood, and its gradient and hessian.
 """
+function obj_grad_hess(local_likelihood::LocalLikelihood, θ)
+    likelihood_obj_grad_hess(local_likelihood, θ)
+end
 
 
-function obj_grad_hess(
-    local_posterior::LocalPosterior,
-    θ::Vector{Float64}
-    )
-
-    neg_likelihood_ogh = obj_grad_hess(local_posterior.local_likelihood, θ)
-
-    posterior_obj_grad_hess(;
-        prior = local_posterior.prior, neg_likelihood_ogh, θ
-        )
+"""
+Estimate negative log-posterior, and its gradient and hessian.
+"""
+function obj_grad_hess(local_posterior::LocalPosterior, θ::Vector{Float64})
+    neg_likelihood_ogh = likelihood_obj_grad_hess(local_posterior, θ)
+    posterior_calc(local_posterior.prior, neg_likelihood_ogh, θ)
     # TODO Handle cases where prior support is bounded?
     # TODO need a way to check valid proposals in simulate n_s.
-    # Maybe possible with Multiple dispatch with priors?
 end
+
+
 
 
 
@@ -184,5 +133,5 @@ end
 
 function log_prior_hessian(d::Sampleable, θ::Vector{Float64})
     f(θ) = loglikelihood(d, θ)
-    ForwardDiff.hessian(f, θ)
+    Symmetric(ForwardDiff.hessian(f, θ))
 end

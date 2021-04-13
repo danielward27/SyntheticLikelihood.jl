@@ -1,53 +1,39 @@
-#---- General type definitions ----
+#------ Sampling algorithms -------
+abstract type AbstractSampler end
+abstract type AbstractSamplerState end
 
 """
-Struct for containing the state of sampler at a particular iteration.
-    Gradient and hessian are `nothing` unless specified.
+Sampler for unadjusted langevin algorithm. Uses a discrete time Euler approximation of
+the langevin diffusion, given by the update θ := θ - η/2 * ∇ + ξ,
+where ξ is given by N(0, ηI).
 
-    $(FIELDS)
+$(FIELDS)
 """
-Base.@kwdef mutable struct SamplerState
+@kwdef struct ULA <: AbstractSampler
+    step_size::Float64
+end
+
+@kwdef mutable struct ULAState <: AbstractSamplerState
     θ::AbstractVector{Float64}
     objective::Float64
-    gradient::Union{AbstractVector, Nothing} = nothing
-    hessian::Union{AbstractMatrix, Nothing} = nothing
+    gradient::Vector{Float64}
     counter::Integer = 0
 end
 
-# Outer constructor
-function SamplerState(θ::AbstractVector{Float64}, ogh::ObjGradHess)
-    SamplerState(θ, ogh.objective, ogh.gradient, ogh.hessian, 0)
-end
-
 function get_init_state(
+    sampler::ULA,
     local_approximation::LocalApproximation,
     init_θ::Vector{Float64}
     )
     ogh = obj_grad_hess(local_approximation, init_θ)
-    SamplerState(init_θ, ogh)
+    @unpack objective, gradient = ogh
+    ULAState(; θ=init_θ, objective, gradient)
 end
-
-
-#------ Sampling algorithms -------
-abstract type AbstractSampler end
-
-"""
-Sampler object for Langevin diffusion. Uses a discrete time Euler approximation of
-the Langevin diffusion (unadjusted Langevin algorithm), given by the update
-θ := θ - η/2 * ∇ + ξ, where ξ is given by N(0, ηI).
-
-$(FIELDS)
-"""
-mutable struct Langevin <: AbstractSampler
-    "Step size parameter."
-    step_size::Float64
-end
-
 
 function update!(
-    sampler::Langevin,
+    sampler::ULA,
     local_approximation::LocalApproximation,
-    state::SamplerState
+    state::ULAState
     )
     η, θ, ∇  = sampler.step_size, state.θ, state.gradient
     ξ = rand(MvNormal(length(θ) , sqrt(η)))
@@ -60,39 +46,59 @@ function update!(
 end
 
 
-
-## Preconditioned Langevin diffusion
-# TODO Change to match martin et al?
+## Riemannian ULA diffusion
 """
-Sampler object for Preconditioned Langevin diffusion. Also can be thought of as
-    a stochastic newton method with constant step size. Uses the update:
-    θ := θ - η/2 * H⁻¹*∇ + ξ, where ξ ∼ N(0, ηH⁻¹).
+Sampler object for Riemannian ULA.
+Uses the update: θ := θ - ϵ²H⁻¹*∇ - ϵ√H⁻¹ z, where z ∼ N(0, I).
 
     $(FIELDS)
 """
-mutable struct PreconditionedLangevin <: AbstractSampler
-    "Step size"
+@kwdef struct RiemannianULA <: AbstractSampler
     step_size::Float64
 end
 
+@kwdef mutable struct RiemannianULAState <: AbstractSamplerState
+    θ::AbstractVector{Float64}
+    objective::Float64
+    gradient::Vector{Float64}
+    hessian::Symmetric{Float64}
+    counter::Integer = 0
+end
+
+function get_init_state(
+    sampler::RiemannianULA,
+    local_approximation::LocalApproximation,
+    init_θ::Vector{Float64}
+    )
+    ogh = obj_grad_hess(local_approximation, init_θ)
+    @unpack objective, gradient, hessian = ogh
+    RiemannianULAState(; θ=init_θ, objective, gradient, hessian)
+end
 
 function update!(
-    sampler::PreconditionedLangevin,
+    sampler::RiemannianULA,
     local_approximation::LocalApproximation,
-    state::SamplerState,
+    state::RiemannianULAState
     )
+    ϵ, θ, ∇  = sampler.step_size, state.θ, state.gradient
+    @unpack gradient, θ, hessian = state
 
-    η, θ, ∇, H  = sampler.step_size, state.θ, state.gradient, state.hessian
-    ξ = rand(MvNormalCanon(1/η .* H))  # Equiv to N(0, η.*H⁻¹)
-    H = Symmetric(H)
-    state.θ = θ .- η/2 .* (H \ ∇) .+ ξ
+    la = local_approximation
 
-    ogh = obj_grad_hess(local_approximation, state.θ; )
+    H⁻¹ = state.hessian^-1
+    H⁻¹ = regularize(H⁻¹, la.P_regularizer)
+    la.P = MvNormal(H⁻¹)
+
+    z = randn(length(θ))
+    state.θ = θ .- (ϵ^2 .* H⁻¹*∇ )/2 .- ϵ*sqrt(H⁻¹) * z
+
+    ogh = obj_grad_hess(la, state.θ)
     state.objective = ogh.objective
     state.gradient = ogh.gradient
     state.hessian = ogh.hessian
     state.counter += 1
 end
+
 
 
 #---- Run the sampling algorithm ----
@@ -111,9 +117,10 @@ function run_sampler!(
     local_approximation::LocalApproximation;
     init_θ::Vector{Float64},
     n_steps::Integer,
-    collect_data::Vector{Symbol} = [:θ, :objective])
+    collect_data::Vector{Symbol} = [:θ, :objective]
+    )
 
-    state = get_init_state(local_approximation, init_θ)
+    state = get_init_state(sampler, local_approximation, init_θ)
     data = init_data_tuple(state, collect_data, n_steps)
 
     for i in 1:n_steps

@@ -40,30 +40,43 @@ end
 
 
 # Used to remove statistics that have zero variance
-function remove_invariant(s; warn=true)
+function remove_invariant(s, s_true; warn=true)
     no_var = var.(eachcol(s)) .≈ 0
     if any(no_var)
         if warn
+            if sum(no_var) == size(s, 2)
+                error("None of the summary statistics had any variance.")
+            end
             @warn "$(@varname(s)) has zero variance columns at index "*
             "$(findall(no_var)). Removing these columns."
         end
         s = s[:, .!no_var]
+        s_true = s_true[.!no_var]
     end
-    return s
+    return s, s_true
 end
 
 
 """
-Make matrix positive definite using eigen decomposition.
-Flips negative eiugnvalues then ensure all greater than threshold.
+Standardize to zero mean and standard deviation 1.
 """
-function ensure_posdef(M::Symmetric, threshold::Float64)
-  M = eigen(M)
-  M.values[:] = abs.(M.values)
-  M.values[M.values .< threshold] .= threshold
-  Symmetric(Matrix(M))
+function standardize(X::AbstractMatrix)
+  means = mean.(eachcol(X))
+  sds = std.(eachcol(X))
+  X = (X .- means') ./ sds'
+  X, means, sds
 end
 
+"""
+Standardize matrix and vector, using the mean and standard deviation of the matrix.
+"""
+function standardize(X::AbstractMatrix, y::AbstractVector)
+  means = mean.(eachcol(X))
+  sds = std.(eachcol(X))
+  X = (X .- means') ./ sds'
+  y = (y - means) ./ sds
+  X, y
+end
 
 
 ## For testing:
@@ -89,4 +102,42 @@ function analytic_mvn_posterior(
   Σ = (Σ1^-1 + Σ2^-1)^-1
   μ = Σ*Σ1^-1*μ1 + Σ*Σ2^-1*μ2
   MvNormal(μ, Σ)
+end
+
+"""
+Convert covariance matrix to correlation matrix.
+"""
+function cov_to_cor(Σ::Union{Diagonal, Symmetric})
+    σ = .√diag(Σ)
+    Symmetric(diagm(1 ./ σ) * Σ * diagm(1 ./ σ))
+end
+
+"""
+Convert correlation matrix to covariance matrix.
+"""
+function cor_to_cov(R::AbstractMatrix, σ²::AbstractVector)
+    σ = .√σ²
+    Symmetric(diagm(σ) * R * diagm(σ))
+end
+
+
+"""
+Used to store and print information about an object. Useful for printing neat
+debugging messages.
+"""
+Base.@kwdef mutable struct ObjectSummaryLogger
+  summaries::Vector{Function}
+  data::Array{Any} = Matrix{Any}(undef, 0, length(summaries)+1)
+end
+
+function add_log!(logger::ObjectSummaryLogger, tag::String, M::AbstractMatrix)
+  row = [f(M) for f in logger.summaries]
+  row = permutedims([tag; row])
+  logger.data = [logger.data; row]
+end
+
+function get_pretty_table(logger::ObjectSummaryLogger)
+  colnames = [string(f) for f in logger.summaries]
+  colnames = ["tag"; colnames]
+  pretty_table(logger.data, colnames)
 end
