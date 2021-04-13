@@ -30,10 +30,10 @@ AV_expected[3, :, :] = [1 2; 3 4]
 
 
 remove_invariant = SyntheticLikelihood.remove_invariant
-@test remove_invariant([1 1 1; 2 1 2]; warn=false) ==  [1 1; 2 2]
+@test remove_invariant([1 1 1; 2 1 2], [1,2,3]; warn=false) ==  ([1 1; 2 2], [1,3])
 
 cov_to_cor = SyntheticLikelihood.cov_to_cor
-A = rand(3,3); A = A'A + I
+A = rand(3,3); A = Symmetric(A'A + I)
 σ² = diag(A)
 
 R = cov_to_cor(A)
