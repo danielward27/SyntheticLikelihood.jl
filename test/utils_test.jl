@@ -66,8 +66,8 @@ actual_mean = mean.(eachcol(X))
 expected_sd = ones(size(X, 2))
 actual_sd = std.(eachcol(X))
 
-@test isapprox(expected_mean, actual_mean; atol=1e-15)
-@test isapprox(expected_sd, actual_sd; atol=1e-15)
+@test isapprox(expected_mean, actual_mean; atol=1e-10)
+@test isapprox(expected_sd, actual_sd; atol=1e-10)
 
 X = rand(3,3)*100
 y = rand(3)*100
