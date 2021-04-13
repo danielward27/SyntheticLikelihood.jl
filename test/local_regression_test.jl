@@ -123,7 +123,6 @@ norm(estimted_Σ.Σ - true_Σ.Σ)
 # Are the diagonal elements improved?
 norm(diag(sample_Σ) - diag(true_Σ.Σ))
 norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
-
 # Sometimes does worse, sometimes does better.
 
 # Check gradient estimates are improved compared to assuming 0
@@ -174,7 +173,8 @@ neg_likelihood_ogh = ObjGradHess(
     Symmetric(-ForwardDiff.hessian(f, test_θ))
 )
 
-actual = SyntheticLikelihood.posterior_ogh(
+
+actual = SyntheticLikelihood.posterior_calc(
     prior, neg_likelihood_ogh, test_θ
     )
 

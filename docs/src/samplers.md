@@ -2,8 +2,8 @@
 To sample from a distribution, first a sampler object should be created. The currently available samplers are shown below:
 
 ```@docs
-Langevin
-PreconditionedLangevin
+ULA
+RiemannianULA
 ```
 
 The sampler object defines the hyperparameters of the sampler, and a function `obj_grad_hess`, which takes `θ` and returns a `ObjGradHess` object, with fields `objective`, `gradient` and `hessian`. The gradient and hessian defualt to `nothing` if not required. This approach seems a bit convoluted (compared to e.g. seperately passing objective, gradient and Hessian functions), but it facilitates reusing calculations shared between calculating the objective, gradient and hessian, if desired. The aim should be to explore around the minima of the function, so the objective could be the negative log-posterior, for example.
@@ -13,7 +13,7 @@ The sampler object can then passed to `run_sampler!`, to sample from the distrib
 run_sampler!
 ```
 
-Below is an example to sample from a multivariate normal density using the discretized langevin diffusion (Unadjusted Langevin Algorithm). In the below example a summary function is not used (it is left to defualt to the identity), so inference is performed on the raw simulator output.
+Below is an example to sample from a multivariate normal density using the discretized ULA diffusion (Unadjusted ULA Algorithm). In the below example a summary function is not used (it is left to defualt to the identity), so inference is performed on the raw simulator output.
 
 ```@example
 using SyntheticLikelihood, Distributions, Plots
@@ -28,8 +28,8 @@ end
 init_θ = [-15., -15]
 n_steps = 1000
 
-langevin = Langevin(1., obj_grad_hess)
-data = run_sampler!(langevin, init_θ, n_steps, [:θ, :counter])
+ULA = ULA(1., obj_grad_hess)
+data = run_sampler!(ULA, init_θ, n_steps, [:θ, :counter])
 
 θ_samples = data[:θ]
 

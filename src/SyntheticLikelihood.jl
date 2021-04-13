@@ -8,11 +8,10 @@ using GLM
 using ForwardDiff
 using Parameters
 using PrettyTables
-
 import Base.@kwdef
 
-include("local_approximation_structs.jl")
 include("matrix_regularizers.jl")
+include("local_approximation_structs.jl")
 include("quadratic_local_regression.jl")
 include("glm_local_regression.jl")
 include("local_regression.jl")
@@ -35,7 +34,7 @@ export Localμ, quadratic_local_μ, LocalΣ, glm_local_Σ, local_likelihood,
     ObjGradHess, obj_grad_hess, LocalApproximation, LocalLikelihood, LocalPosterior
 
 # Samplers
-export Langevin, PreconditionedLangevin, run_sampler!
+export ULA, RiemannianULA, run_sampler!
 
 # utils
 export peturb
