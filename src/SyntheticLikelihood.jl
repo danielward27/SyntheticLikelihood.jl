@@ -10,8 +10,8 @@ using Parameters
 using PrettyTables
 import Base.@kwdef
 
-include("local_approximation_structs.jl")
 include("matrix_regularizers.jl")
+include("local_approximation_structs.jl")
 include("quadratic_local_regression.jl")
 include("glm_local_regression.jl")
 include("local_regression.jl")
