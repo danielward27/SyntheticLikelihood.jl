@@ -40,19 +40,43 @@ end
 
 
 # Used to remove statistics that have zero variance
-function remove_invariant(s; warn=true)
+function remove_invariant(s, s_true; warn=true)
     no_var = var.(eachcol(s)) .≈ 0
     if any(no_var)
         if warn
+            if sum(no_var) == size(s, 2)
+                error("None of the summary statistics had any variance.")
+            end
             @warn "$(@varname(s)) has zero variance columns at index "*
             "$(findall(no_var)). Removing these columns."
         end
         s = s[:, .!no_var]
+        s_true = s_true[.!no_var]
     end
-    return s
+    return s, s_true
 end
 
 
+"""
+Standardize to zero mean and standard deviation 1.
+"""
+function standardize(X::AbstractMatrix)
+  means = mean.(eachcol(X))
+  sds = std.(eachcol(X))
+  X = (X .- means') ./ sds'
+  X, means, sds
+end
+
+"""
+Standardize matrix and vector, using the mean and standard deviation of the matrix.
+"""
+function standardize(X::AbstractMatrix, y::AbstractVector)
+  means = mean.(eachcol(X))
+  sds = std.(eachcol(X))
+  X = (X .- means') ./ sds'
+  y = (y - means) ./ sds
+  X, y
+end
 
 
 ## For testing:
@@ -83,7 +107,7 @@ end
 """
 Convert covariance matrix to correlation matrix.
 """
-function cov_to_cor(Σ::AbstractMatrix)
+function cov_to_cor(Σ::Union{Diagonal, Symmetric})
     σ = .√diag(Σ)
     Symmetric(diagm(1 ./ σ) * Σ * diagm(1 ./ σ))
 end

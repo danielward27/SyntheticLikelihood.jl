@@ -22,14 +22,15 @@ end
      local_approximation::LocalApproximation,
      θ::Vector{Float64}
      )
+     @unpack simulator, summary, P, n_sim, s_true = local_approximation
      θᵢ = θ
-     la = local_approximation
-     θ = peturb(θᵢ, la.P, la.n_sim)
-     s = simulate_n_s(θ; la.simulator, la.summary)
-     s = remove_invariant(s)
+     θ = peturb(θᵢ, P, n_sim)
+     s = simulate_n_s(θ; simulator, summary)
+     s, s_true = remove_invariant(s, s_true)
+     s, s_true = standardize(s, s_true)
      μ = quadratic_local_μ(; θᵢ, θ, s)
      Σ = glm_local_Σ(; θᵢ, θ, μ.ϵ)
-     l = likelihood_calc(μ, Σ, la.s_true)
+     l = likelihood_calc(μ, Σ, s_true)
      l
  end
 

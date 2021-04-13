@@ -44,10 +44,10 @@ nothing # hide
 Note that if required a `summary` function can optionally be specified here, to summarise the output of the `simulator`.
 
 #### Defining sampling method
-We can then define how to sample from the distribution. Below I will use the [`PreconditionedLangevin`](@ref) sampler with a step size of 0.1.
+We can then define how to sample from the distribution. Below I will use the [`RiemannianULA`](@ref) sampler with a step size of 0.1.
 
 ```@example 1
-plangevin = PreconditionedLangevin(0.1)
+pULA = RiemannianULA(0.1)
 nothing # hide
 ```
 
@@ -56,7 +56,7 @@ We can now define some initial parameter values, `init_θ`, and sample from the 
 
 ```@example 1
 init_θ = convert(Vector{Float64}, 1:10)
-data = run_sampler!(plangevin, local_likelihood; init_θ, n_steps = 500)
+data = run_sampler!(pULA, local_likelihood; init_θ, n_steps = 500)
 nothing # hide
 ```
 
@@ -80,7 +80,7 @@ We can then define our objective using [`LocalPosterior`](@ref) and run the samp
 
 ```@example 1
 local_posterior = LocalPosterior(prior, local_likelihood)
-data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 500)
+data = run_sampler!(pULA, local_posterior; init_θ, n_steps = 500)
 plot(data.θ, label = param_names)
 ```
 

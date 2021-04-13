@@ -3,17 +3,17 @@ abstract type AbstractSampler end
 abstract type AbstractSamplerState end
 
 """
-Sampler for Langevin diffusion. Uses a discrete time Euler approximation of
-the Langevin diffusion (unadjusted Langevin algorithm), given by the update
-θ := θ - η/2 * ∇ + ξ, where ξ is given by N(0, ηI).
+Sampler for unadjusted langevin algorithm. Uses a discrete time Euler approximation of
+the langevin diffusion, given by the update θ := θ - η/2 * ∇ + ξ,
+where ξ is given by N(0, ηI).
 
 $(FIELDS)
 """
-@kwdef struct Langevin <: AbstractSampler
+@kwdef struct ULA <: AbstractSampler
     step_size::Float64
 end
 
-@kwdef mutable struct LangevinState <: AbstractSamplerState
+@kwdef mutable struct ULAState <: AbstractSamplerState
     θ::AbstractVector{Float64}
     objective::Float64
     gradient::Vector{Float64}
@@ -21,19 +21,19 @@ end
 end
 
 function get_init_state(
-    sampler::Langevin,
+    sampler::ULA,
     local_approximation::LocalApproximation,
     init_θ::Vector{Float64}
     )
     ogh = obj_grad_hess(local_approximation, init_θ)
     @unpack objective, gradient = ogh
-    LangevinState(; θ=init_θ, objective, gradient)
+    ULAState(; θ=init_θ, objective, gradient)
 end
 
 function update!(
-    sampler::Langevin,
+    sampler::ULA,
     local_approximation::LocalApproximation,
-    state::LangevinState
+    state::ULAState
     )
     η, θ, ∇  = sampler.step_size, state.θ, state.gradient
     ξ = rand(MvNormal(length(θ) , sqrt(η)))
@@ -46,21 +46,18 @@ function update!(
 end
 
 
-
-## Preconditioned Langevin diffusion
-# TODO Change to match martin et al? Or to match the Reimannian one probably best.
+## Riemannian ULA diffusion
 """
-Sampler object for Preconditioned Langevin diffusion. Also can be thought of as
-    a stochastic newton method with constant step size. Uses the update:
-    θ := θ - η/2 * H⁻¹*∇ + ξ, where ξ ∼ N(0, ηH⁻¹).
+Sampler object for Riemannian ULA.
+Uses the update: θ := θ - ϵ²H⁻¹*∇ - ϵ√H⁻¹ z, where z ∼ N(0, I).
 
     $(FIELDS)
 """
-@kwdef struct PreconditionedLangevin <: AbstractSampler
+@kwdef struct RiemannianULA <: AbstractSampler
     step_size::Float64
 end
 
-@kwdef mutable struct PreconditionedLangevinState <: AbstractSamplerState
+@kwdef mutable struct RiemannianULAState <: AbstractSamplerState
     θ::AbstractVector{Float64}
     objective::Float64
     gradient::Vector{Float64}
@@ -69,33 +66,32 @@ end
 end
 
 function get_init_state(
-    sampler::PreconditionedLangevin,
+    sampler::RiemannianULA,
     local_approximation::LocalApproximation,
     init_θ::Vector{Float64}
     )
     ogh = obj_grad_hess(local_approximation, init_θ)
     @unpack objective, gradient, hessian = ogh
-    PreconditionedLangevinState(; θ=init_θ, objective, gradient, hessian)
+    RiemannianULAState(; θ=init_θ, objective, gradient, hessian)
 end
 
 function update!(
-    sampler::PreconditionedLangevin,
+    sampler::RiemannianULA,
     local_approximation::LocalApproximation,
-    state::PreconditionedLangevinState
+    state::RiemannianULAState
     )
-    η, θ, ∇  = sampler.step_size, state.θ, state.gradient
+    ϵ, θ, ∇  = sampler.step_size, state.θ, state.gradient
+    @unpack gradient, θ, hessian = state
 
     la = local_approximation
-    P = regularize(state.hessian, la.P_regularizer)
-    la.P = MvNormal(P)
+    H⁻¹ = state.hessian^-1
+    H⁻¹ = regularize(H⁻¹, la.P_regularizer)
+    la.P = MvNormal(H⁻¹)
 
-    # TODO seperate H regularizer (e.g. sampler.H_regularizer) ?
-    H⁻¹ = P
+    z = randn(length(θ))
+    state.θ = θ .- (ϵ^2 .*H⁻¹*∇)/2 .- ϵ*sqrt(H⁻¹) \ z
 
-    ξ = rand(MvNormal(η .* H⁻¹))
-    state.θ = θ .- η/2 .* H⁻¹*∇ .+ ξ
-
-    ogh = obj_grad_hess(local_approximation, state.θ)
+    ogh = obj_grad_hess(la, state.θ)
     state.objective = ogh.objective
     state.gradient = ogh.gradient
     state.hessian = ogh.hessian
@@ -122,7 +118,6 @@ function run_sampler!(
     n_steps::Integer,
     collect_data::Vector{Symbol} = [:θ, :objective]
     )
-    local_approximation.P = local_approximation.init_P
 
     state = get_init_state(sampler, local_approximation, init_θ)
     data = init_data_tuple(state, collect_data, n_steps)

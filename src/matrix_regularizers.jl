@@ -3,21 +3,11 @@
 
 abstract type AbstractRegularizer end
 
-"""
-Flip the eigenvalues.
-"""
-struct Flip <: AbstractRegularizer end
-
-function regularize(H::Symmetric, method::Flip)
-    H = eigen(H)
-    H.values .= abs.(H.values)
-    Symmetric(Matrix(H))
-end
 
 # TODO Update these docs
 """
 Carries out the following steps:
-1. Flip eigenvalues of hessian.
+1. Use [`soft_abs`](@ref) to get absolute values of the eigenvalues.
 2. Invert hessian to get covariance matrix.
 3. Decompose the covariance into the variance and correlation.
 4. Divide the correlation matrix by a constant to reach condition criteria.
@@ -28,36 +18,31 @@ See http://parker.ad.siu.edu/Olive/slch6.pdf
 
 """
 @kwdef struct KitchenSink <: AbstractRegularizer
-    "A reference covariance matrix, e.g. a multiple of init_P."
-    ref::AbstractMatrix
+    "Reference/target log-determinant"
+    target_logdet::Float64 = -23.
+    "soft abs threshold. Minimum eigenvalue is 1/α. α=Inf is absolute value."
+    α::Float64 = 10^6
     """Threshhold condition number of the correlation matrix."""
     c::Float64 = 10.
     "Threshold correlation below which set to zero."
     τ::Float64 = 0.1
 end
 
-function regularize(H::Symmetric, method::KitchenSink)
-    @unpack ref, c, τ = method
+function regularize(Σ::Union{Diagonal, Symmetric}, method::KitchenSink)
+    @unpack target_logdet, α, c, τ = method
     summaries = [cond, det, min_var, max_var, mean_off_diag]
     logger = ObjectSummaryLogger(;summaries)  # For debugger
-    add_log!(logger, "Reference summary", ref)
-    H = eigen(H)
-    H.values .= abs.(H.values)
-    P = Symmetric(H^-1)
-    add_log!(logger, "Initial P", P)
+    add_log!(logger, "Initial P", Σ)
 
-    # Scale so determinant to matches ref
-    P = cov_det_reg(P, ref)
-    add_log!(logger, "After scaling determinant", P)
+    Σ = soft_abs(Σ, α)
+    add_log!(logger, "Post soft_abs", Σ)
 
-    # # Regularize correlation matrix
-    σ² = diag(P)
-    R = cov_to_cor(P)
-    R = cor_cond_threshold(R, c)
-    R[R .< τ] .= 0
-    P = cor_to_cov(R, σ²)
+    Σ = regularize_Σ_cor(Σ, c, τ)
+    add_log!(logger, "Post regularize_Σ_cor", Σ)
 
-    add_log!(logger, "After modifying correlation", P)
+    # Scale determinant to match ref
+    Σ = cov_det_reg(Σ, target_logdet)
+    add_log!(logger, "Post cov_det_reg", Σ)
 
     # # Limit variance
     # upper_σ²_lim = 100
@@ -74,38 +59,67 @@ function regularize(H::Symmetric, method::KitchenSink)
 
     @debug "$(get_pretty_table(logger))"
 
-    P
-end
-
-
-
-# 6.6 in http://parker.ad.siu.edu/Olive/slch6.pdf
-function cor_cond_threshold(R::Symmetric, c::Float64)
-    λ = eigvals(R)
-    δ = maximum([0, (λ[end] - c*λ[1])/(c-1)])  # λ[1] smallest eigval
-    (1/(1+δ)).*(R + δ*I)
+    Σ
 end
 
 
 """
-Scale one matrix so the determinant matches another.
+Takes "soft" absolute value of the eigenvalues, using the method of
+Betancourt 2013 (https://arxiv.org/pdf/1212.4693.pdf).
+α → Inf then this approaches the actual absolute value. Minimum eigenvalues
+are limited to 1/α.
+"""
+function soft_abs(A::Union{Diagonal, Eigen, Symmetric}, α::Float64)
+    @assert α > 0
+    A = eigen(A)
+    λ = A.values
+    λ = @. λ*(exp(α*λ) + exp(-α*λ))/(exp(α*λ) - exp(-α*λ))
+    λ[.!isfinite.(λ)] .= abs.(A.values[.!isfinite.(λ)])   # For when exp becomes Inf.
+    A.values .= λ
+    @assert all(isfinite.(Matrix(A)))
+    Symmetric(Matrix(A))
+end
+
+
+"""
+Regularize covariance matrix, by limiting condition number of the
+associated correlation matrix, and setting off diagonal values of the
+correlation below a threshold (τ) to zero.
+"""
+function regularize_Σ_cor(Σ::Union{Symmetric, Diagonal}, c::Float64, τ::Float64)
+    @assert τ >=0 && τ < 1 && c > 0
+    σ² = diag(Σ)
+    R = cov_to_cor(Σ)
+    λ = eigvals(R)
+    cond = maximum(λ)/minimum(λ)
+    if cond > c
+        δ = maximum([0, (λ[end] - c*λ[1])/(c-1)])  # λ[1] is smallest eigval
+        R = (1/(1+δ)).*(R + δ*I)
+    end
+    R = Matrix(R)
+    R[R .< τ] .= 0
+    R = Symmetric(R)
+    Σ = cor_to_cov(R, σ²)
+end
+
+
+
+"""
+Scale matrix to a particular log-determinant value.
 """
 function cov_det_reg(
-    P::AbstractMatrix,
-    ref::AbstractMatrix,
+    Σ::Union{Symmetric, Diagonal},
+    target_logdet::Float64
     )
-    n = size(P, 1)
-    log_scale = 1/n * (logdet(ref) - logdet(P))
-    P = exp(log_scale)*P
-    P
+    log_scale = 1/size(Σ, 1) * (target_logdet - logdet(Σ))
+    Σ = exp(log_scale)*Σ
+    Σ
 end
 
-
-
-# Summary functions for debugging
+# Summary functions for debugging/logging
 max_var(P::AbstractMatrix) = maximum(diag(P))
 min_var(P::AbstractMatrix) = minimum(diag(P))
-function mean_off_diag(M::AbstractMatrix)
+mean_off_diag(M::AbstractMatrix) = begin
     non_diag = M[setdiff(1:length(M), diagind(M))]
     mean(non_diag)
 end

@@ -11,12 +11,11 @@ Base.@kwdef mutable struct LocalLikelihood <: LocalApproximation
     summary::Function=identity
     s_true::Vector{Float64}
     "Initial distribution used to peturb the parameter value."
-    init_P::AbstractMvNormal
+    P::AbstractMvNormal
     "The number of peturbed points to use for the local regression."
-    n_sim::Integer
+    n_sim::Integer = 1000
     "Adaptive proposal distribution. Should not be set manually."
-    P::AbstractMvNormal = init_P
-    P_regularizer = KitchenSink(ref = cov(init_P))
+    P_regularizer = KitchenSink()
 end
 
 
@@ -31,9 +30,8 @@ Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
     simulator::Function
     summary::Function=identity
     s_true::Vector{Float64}
-    init_P::AbstractMvNormal = MvNormal(cov(prior))
-    n_sim::Integer
-    P::AbstractMvNormal = init_P
-    P_regularizer = KitchenSink(ref = cov(prior))
+    P::AbstractMvNormal = MvNormal(cov(prior))
+    n_sim::Integer = 1000
+    P_regularizer = KitchenSink()
     "Prior distribution (either multivariate or Product distribution)"
 end

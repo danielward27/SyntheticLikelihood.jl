@@ -17,15 +17,15 @@ local_likelihood = LocalLikelihood(;
   n_sim = 1000,
 )
 
-plangevin = PreconditionedLangevin(0.1)
+pULA = RiemannianULA(0.1)
 
 init_θ = fill(5., 10)
 
-data = run_sampler!(plangevin, local_likelihood; init_θ, n_steps = 500)
+data = run_sampler!(pULA, local_likelihood; init_θ, n_steps = 500)
 θ = data[:θ][101:end, :] # Remove burn in
 
 
-data = run_sampler!(plangevin, local_posterior; init_θ, n_steps = 100)
+data = run_sampler!(pULA, local_posterior; init_θ, n_steps = 100)
 θ = data[:θ][101:end, :] # Remove burn in
 
 likelihood = MvNormal(θ_true, sqrt(0.1))

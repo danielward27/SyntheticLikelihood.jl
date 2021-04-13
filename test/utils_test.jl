@@ -29,18 +29,6 @@ AV_expected[3, :, :] = [1 2; 3 4]
 @test_throws AssertionError stack_arrays([[1,2], [1,2,3]])
 
 
-ensure_posdef = SyntheticLikelihood.ensure_posdef
-seed = Random.seed!(1)
-A = rand(seed, 3,3); A = -(A'*A)
-A = Symmetric(A)
-
-threshold = 1.
-@test !isposdef(A)
-A = ensure_posdef(A, threshold)
-
-@test isposdef(A)
-@test all(eigvals(A) .>= (threshold - 1e-10))
-
 remove_invariant = SyntheticLikelihood.remove_invariant
 @test remove_invariant([1 1 1; 2 1 2]; warn=false) ==  [1 1; 2 2]
 
@@ -66,3 +54,26 @@ add_log!(logger, "A summary", A)
 B = diagm(fill(2,3))
 add_log!(logger, "B summary", B)
 @test logger.data == ["A summary" 1.0 1.0; "B summary" 1.0 8.0]
+
+
+standardize = SyntheticLikelihood.standardize
+
+X = rand(3,3)*100
+X, _, _ = standardize(X)
+
+expected_mean = fill(0, size(X, 2))
+actual_mean = mean.(eachcol(X))
+expected_sd = ones(size(X, 2))
+actual_sd = std.(eachcol(X))
+
+@test isapprox(expected_mean, actual_mean; atol=1e-15)
+@test isapprox(expected_sd, actual_sd; atol=1e-15)
+
+X = rand(3,3)*100
+y = rand(3)*100
+X, y = standardize(X, y)
+actual_mean = mean.(eachcol(X))
+actual_sd = std.(eachcol(X))
+
+@test isapprox(expected_mean, actual_mean; atol=1e-15)
+@test isapprox(expected_sd, actual_sd; atol=1e-15)
