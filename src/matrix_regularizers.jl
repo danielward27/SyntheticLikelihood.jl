@@ -17,10 +17,10 @@ See http://parker.ad.siu.edu/Olive/slch6.pdf
 
 """
 @kwdef struct KitchenSink <: AbstractRegularizer
-    "Reference/target log-determinant"
-    target_logdet::Float64 = -23.
+    "Reference covariance matrix"
+    ref::Union{Symmetric, Diagonal}
     "soft abs threshold. Minimum eigenvalue is 1/α. α=Inf is absolute value."
-    α::Float64 = 10^6
+    α::Float64 = 10^5
     """Threshhold condition number of the correlation matrix."""
     c::Float64 = 10.
     "Threshold correlation below which set to zero."
@@ -28,7 +28,7 @@ See http://parker.ad.siu.edu/Olive/slch6.pdf
 end
 
 function regularize(Σ::Union{Diagonal, Symmetric}, method::KitchenSink)
-    @unpack target_logdet, α, c, τ = method
+    @unpack ref, α, c, τ = method
     summaries = [cond, det, min_var, max_var, mean_off_diag]
     logger = ObjectSummaryLogger(;summaries)  # For debugger
     add_log!(logger, "Initial P", Σ)
@@ -39,9 +39,9 @@ function regularize(Σ::Union{Diagonal, Symmetric}, method::KitchenSink)
     Σ = regularize_Σ_cor(Σ, c, τ)
     add_log!(logger, "Post regularize_Σ_cor", Σ)
 
-    # Scale determinant to match ref
-    Σ = cov_det_reg(Σ, target_logdet)
-    add_log!(logger, "Post cov_det_reg", Σ)
+    # Scale determinant to match ref  # TODO Too dependent on dimensionality?
+    Σ = cov_logdet_reg(Σ, logdet(ref))
+    add_log!(logger, "Post cov_logdet_reg", Σ)
 
     # # Limit variance
     # upper_σ²_lim = 100
@@ -106,7 +106,7 @@ end
 """
 Scale matrix to a particular log-determinant value.
 """
-function cov_det_reg(
+function cov_logdet_reg(
     Σ::Union{Symmetric, Diagonal},
     target_logdet::Float64
     )
@@ -136,7 +136,7 @@ end
 #If α=0, then P is scaled to have determinant matching the reference, as
 #α→∞, P is not scaled.
 #"""
-#function cov_det_reg(
+#function cov_logdet_reg(
 #    P::AbstractMatrix,
 #    ref_cov::AbstractMatrix,
 #    α::Float64

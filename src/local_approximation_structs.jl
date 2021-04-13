@@ -15,7 +15,7 @@ Base.@kwdef mutable struct LocalLikelihood <: LocalApproximation
     "The number of peturbed points to use for the local regression."
     n_sim::Integer = 1000
     "Adaptive proposal distribution. Should not be set manually."
-    P_regularizer = KitchenSink()
+    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(cov(P)))
 end
 
 
@@ -32,6 +32,6 @@ Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
     s_true::Vector{Float64}
     P::AbstractMvNormal = MvNormal(cov(prior))
     n_sim::Integer = 1000
-    P_regularizer = KitchenSink()
+    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(cov(prior)))
     "Prior distribution (either multivariate or Product distribution)"
 end

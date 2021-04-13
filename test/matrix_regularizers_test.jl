@@ -12,8 +12,8 @@ R = cov_to_cor(A)
 @test regularize_Σ_cor(A, Inf, 1-1e-15) ≈ Diagonal(A)
 @test regularize_Σ_cor(A, Inf, 0.) ≈ A
 
-cov_det_reg = SyntheticLikelihood.cov_det_reg
-@test logdet(cov_det_reg(A, 10.)) ≈ 10
+cov_logdet_reg = SyntheticLikelihood.cov_logdet_reg
+@test logdet(cov_logdet_reg(A, 10.)) ≈ 10
 
 
 soft_abs = SyntheticLikelihood.soft_abs

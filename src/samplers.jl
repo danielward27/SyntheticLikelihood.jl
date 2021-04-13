@@ -129,8 +129,3 @@ function run_sampler!(
     end
     simplify_data(data)
 end
-
-
-
-# P_from_objective_hessian
-# Note this is the same as Σ^-1
