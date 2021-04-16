@@ -1,17 +1,46 @@
 
 """
 Peturb a vector using a user specified distribution (often MVN zero mean).
-Returns array of size (n, length(θ))
+Returns array of size (n, length(θ)). If  a prior is provided, proposals
+are checked to have prior support using insupport and are resampled if not.
 
 $(SIGNATURES)
 
 # Arguments
-- `θ::AbstractVector` Parameter to peturb.
-- `d::Sampleable` Distribution from which to sample (see Distributions.jl).
--  `n::Integer = 1` Number of peturbed vectors to return.
+- `θ` Parameter to peturb.
+- `d` Distribution from which to sample (see Distributions.jl).
+- `n = 1` Number of peturbed vectors to return.
+- `valid_params` Return true if θ vector is valid, and false if invalid.
 """
-function peturb(θ::AbstractVector, d::Sampleable, n::Integer = 1)
+function peturb(θ::AbstractVector, d::Sampleable; n::Integer = 1)
     (rand(d, n) .+ θ)'
+end
+
+function peturb(
+    θ::AbstractVector,
+    d::Sampleable,
+    valid_params::Function;
+    n::Integer = 1,
+    )
+    θᵢ = θ
+    θ = Matrix{Float64}(undef, n, length(d))
+    for i in 1:n
+        valid = false
+        attempts = 0
+        while !valid
+            θ′ = vec(peturb(θᵢ, d))
+            valid = valid_params(θ′)
+            if valid
+                θ[i, :] .= θ′
+            else
+                attempts += 1
+                if attempts == 1000
+                    error("Could not find valid peturbed θ.")
+                end
+            end
+        end
+    end
+    θ
 end
 
 
@@ -105,11 +134,13 @@ function analytic_mvn_posterior(
 end
 
 """
-Convert covariance matrix to correlation matrix.
+Convert covariance matrix to correlation matrix. Returns tuple (R, σ²)
 """
 function cov_to_cor(Σ::Union{Diagonal, Symmetric})
-    σ = .√diag(Σ)
-    Symmetric(diagm(1 ./ σ) * Σ * diagm(1 ./ σ))
+    σ² = diag(Σ)
+    σ = .√σ²
+    R = Symmetric(diagm(1 ./ σ) * Σ * diagm(1 ./ σ))
+    R, σ²
 end
 
 """
@@ -140,4 +171,37 @@ function get_pretty_table(logger::ObjectSummaryLogger)
   colnames = [string(f) for f in logger.summaries]
   colnames = ["tag"; colnames]
   pretty_table(logger.data, colnames)
+end
+
+
+"""
+Find outlier rows in matrix, using threshold multiples of iqr above and
+below the median for each column.
+"""
+function outlier_rows(A::AbstractMatrix; iqr_tol::Float64 = 4.)
+    iqrs = iqr.(eachcol(A))
+    medians = median.(eachcol(A))
+    lower_lim = medians .- iqr_tol*iqrs
+    upper_lim = medians .+ iqr_tol*iqrs
+    outliers = (A .< lower_lim') .| (A .> upper_lim')
+    outlier_rows = any.(eachrow(outliers))
+    outlier_rows
+end
+
+
+"""
+Remove outlier rows from both matrices, using first matrix to determine
+outliers.
+"""
+function rm_outliers(A::AbstractMatrix, B::AbstractMatrix; kwargs...)
+    outliers = outlier_rows(A; kwargs...)
+    A[.!outliers, :], B[.!outliers, :]
+end
+
+"""
+Remove outlier rows from matrix.
+"""
+function rm_outliers(A::AbstractMatrix; kwargs...)
+    outliers = outlier_rows(A; kwargs...)
+    A[.!outliers, :]
 end

@@ -54,10 +54,27 @@ function glm_local_Σ(;
 
     # Get coefficients of GLM
     coefs = Array{Float64}(undef, nₛ, n_θ+1)
+    @debug """
+    Maximum residual = $(maximum(ϵ²))
+    Median residual = $(median(ϵ²))
+    """
+
     for i in 1:nₛ
-        @assert rank(θ) == size(θ, 2)
-        fit = glm(θ, ϵ²[:, i], Gamma(), LogLink(), maxiter=1000) # TODO: Add weights?
-        coefs[i, :] = coef(fit)
+        try
+            fit = glm(θ, ϵ²[:, i], Gamma(), LogLink(), maxiter=1000) # TODO: Add weights?
+            coefs[i, :] = coef(fit)
+        catch e
+            println("GLM did not converge. Writing θ (X) and ϵ² (y) to file for easier debugging")
+
+            open("X.txt", "w") do io
+                writedlm(io, θ)
+            end
+
+            open("y.txt", "w") do io
+                writedlm(io, ϵ²[:, i])
+            end
+            throw(e)
+        end
     end
 
     ϕ = coefs[:, 1]  # exp(ϕ) gives variance estimates

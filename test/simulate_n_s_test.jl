@@ -5,7 +5,7 @@ simulator = SyntheticLikelihood.deterministic_test_simulator
 n_sim = 100
 
 d = MvNormal(length(θ_true), 2)
-θ = peturb(θ_true, d, n_sim)
+θ = peturb(θ_true, d; n = n_sim)
 
 s1 = simulate_n_s(θ_true; simulator, n_sim=10)
 s2 = simulate_n_s(θ; simulator)

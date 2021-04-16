@@ -29,7 +29,7 @@ X, combinations = quadratic_design_matrix(X)
 
 θᵢ = [2.0, 5]
 P = MvNormal(length(θᵢ), 2)
-θ = peturb(θᵢ, P, 100)
+θ = peturb(θᵢ, P; n = 100)
 s = simulate_n_s(θ; simulator, summary=identity)
 μ = quadratic_local_μ(;θᵢ, θ, s)
 
@@ -66,7 +66,7 @@ function test_residuals(;ϕ, v, θ)
 end
 
 θᵢ = [1., 2, 3]
-θ = peturb(θᵢ, MvNormal(3, 1), 1000)
+θ = peturb(θᵢ, MvNormal(3, 1); n = 1000)
 θ_centered = θ .- θᵢ'
 
 # ϵ² model kwargs for two summary statistics

@@ -15,23 +15,32 @@ Base.@kwdef mutable struct LocalLikelihood <: LocalApproximation
     "The number of peturbed points to use for the local regression."
     n_sim::Integer = 1000
     "Adaptive proposal distribution. Should not be set manually."
-    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(cov(P)))
+    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(Matrix(cov(P))))
+    """
+    Parameter constraints. Function that takes a parameter vector and returns
+    true (for valid parameters) or false (for invalid parameters). Defualt
+    is θ -> true
+    """
+    valid_params::Function = θ -> true
 end
 
 
 """
 Contains the hyperparameters for getting a local approximation
-of the posterior.
+of the posterior. In contrast to the likelihood version, a prior is provided,
+P is by defualt a MvNormal with covariance 0.5*cov(prior), and parameter 
+valid_params checks whether proposed points fall within the prior support.
 
 $(FIELDS)
 """
 Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
+    "Prior distribution (either multivariate or Product distribution)"
     prior::Sampleable
     simulator::Function
     summary::Function=identity
     s_true::Vector{Float64}
-    P::AbstractMvNormal = MvNormal(cov(prior))
+    P::AbstractMvNormal = MvNormal(0.5.*cov(prior))
     n_sim::Integer = 1000
-    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(cov(prior)))
-    "Prior distribution (either multivariate or Product distribution)"
+    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(Matrix(cov(prior))))
+    valid_params::Function = θ -> insupport(prior, θ)
 end

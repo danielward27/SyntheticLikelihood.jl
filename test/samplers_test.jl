@@ -3,6 +3,7 @@ using SyntheticLikelihood, Test, Random, Distributions
 seed = Random.seed!(2)
 
 n = 5
+
 function simulator(θ::Vector{Float64})
   @assert length(θ) == n
   d = MvNormal(θ, sqrt(0.1))
@@ -17,7 +18,7 @@ local_likelihood = LocalLikelihood(;
   P = MvNormal(fill(0.5, n)),
 )
 
-rula = RiemannianULA(0.1)
+rula = RiemannianULA(0.2)
 init_θ = fill(5., n)
 
 data = run_sampler!(rula, local_likelihood; init_θ, n_steps = 500)
@@ -33,4 +34,4 @@ data = run_sampler!(rula, local_posterior; init_θ, n_steps = 500)
 likelihood = MvNormal(θ_true, sqrt(0.1))
 expected = SyntheticLikelihood.analytic_mvn_posterior(prior, likelihood)
 
-@test isapprox(mean(expected), mean.(eachcol(θ)); atol = 1.5)
+@test isapprox(mean(expected), mean.(eachcol(θ)); atol = 2)

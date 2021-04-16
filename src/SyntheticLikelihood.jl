@@ -9,6 +9,8 @@ using ForwardDiff
 using Parameters
 using PrettyTables
 import Base.@kwdef
+using StatsBase
+using DelimitedFiles
 
 include("matrix_regularizers.jl")
 include("local_approximation_structs.jl")

@@ -100,7 +100,6 @@ function update!(
 end
 
 
-
 #---- Run the sampling algorithm ----
 
 """
@@ -126,6 +125,7 @@ function run_sampler!(
     for i in 1:n_steps
         update!(sampler, local_approximation, state)
         add_state!(data, state, i)
+        @debug "Iteration $(i)" state.θ
     end
     simplify_data(data)
 end

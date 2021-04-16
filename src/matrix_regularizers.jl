@@ -3,64 +3,56 @@
 
 abstract type AbstractRegularizer end
 
-
-# TODO Update these docs
 """
 Carries out the following steps:
 1. Use `soft_abs` to get absolute values of the eigenvalues.
+2. If required, shrink the variances towards the prior.
 3. Decompose the covariance into the variance and correlation.
 4. Divide the correlation matrix by a constant to reach condition criteria.
 5. Set non diagonal correlation to zero if < τ
-6. Scale so that the determinant matches a reference distribution.
 
-See http://parker.ad.siu.edu/Olive/slch6.pdf
-
+See http://parker.ad.siu.edu/Olive/slch6.pdf for correlation regularization.
 """
 @kwdef struct KitchenSink <: AbstractRegularizer
-    "Reference covariance matrix"
-    ref::Union{Symmetric, Diagonal}
+    "Reference covariance matrix, e.g. prior or the initial P matrix."
+    ref::Union{Diagonal, Symmetric}
     "soft abs threshold. Minimum eigenvalue is 1/α. α=Inf is absolute value."
-    α::Float64 = 10^5
-    """Threshhold condition number of the correlation matrix."""
+    α::Float64 = 1 / (minimum(eigvals(ref))/1e3)
+    """Minimum limit for variance compared to ref. Shrinks towards reference if
+    exceeded. See `regularize_Σ_merge`."""
+    var_lo::Float64 = 0.05
+    "Maximum limit for variance compared to ref."
+    var_hi::Float64 = 2
+    """Maximum condition number of the associated correlation matrix. Shrinks
+    correaltion towards the identity matrix if exceeded."""
     c::Float64 = 10.
     "Threshold correlation below which set to zero."
-    τ::Float64 = 0.1
+    τ::Float64 = 0.05
 end
 
 function regularize(Σ::Union{Diagonal, Symmetric}, method::KitchenSink)
-    @unpack ref, α, c, τ = method
-    summaries = [cond, det, min_var, max_var, mean_off_diag]
+    @unpack ref, α, var_lo, var_hi, c, τ = method
+    summaries = [cond, det, min_var, max_var, min_off_diag, max_off_diag]
     logger = ObjectSummaryLogger(;summaries)  # For debugger
-    add_log!(logger, "Initial P", Σ)
+    add_log!(logger, "ref Σ", ref)
+    add_log!(logger, "Initial Σ", Σ)
 
     Σ = soft_abs(Σ, α)
-    add_log!(logger, "Post soft_abs", Σ)
+    add_log!(logger, "Post soft_abs Σ", Σ)
 
-    Σ = regularize_Σ_cor(Σ, c, τ)
-    add_log!(logger, "Post regularize_Σ_cor", Σ)
+    Σ = regularize_Σ_merge(Σ, ref, var_lo, var_hi)
+    add_log!(logger, "Post regularize_Σ_merge Σ", Σ)
 
-    # Scale determinant to match ref  # TODO Too dependent on dimensionality?
-    Σ = cov_logdet_reg(Σ, logdet(ref))
-    add_log!(logger, "Post cov_logdet_reg", Σ)
+    R, σ² = cov_to_cor(Σ)
+    add_log!(logger, "Pre regularize_cor R", R)
+    R = regularize_cor(R, c, τ)
+    add_log!(logger, "Post regularize_cor R", R)
 
-    # # Limit variance
-    # upper_σ²_lim = 100
-    # lower_σ²_lim = 0.01
-
-    # ref_σ² = diag(ref)
-    # upper_σ² = upper_σ²_lim*ref_σ²
-    # lower_σ² = lower_σ²_lim*ref_σ²
-    # σ²[σ² .> upper_σ²] = upper_σ²[σ² .> upper_σ²]
-    # σ²[σ² .< lower_σ²] = lower_σ²[σ² .< lower_σ²]
-
-    # P = cor_to_cov(P, σ²)
-    # add_log!(logger, "After modifying variances", P)
-
+    Σ = cor_to_cov(R, σ²)
+    add_log!(logger, "Final Σ", Σ)
     @debug "$(get_pretty_table(logger))"
-
     Σ
 end
-
 
 """
 Takes "soft" absolute value of the eigenvalues, using the method of
@@ -81,14 +73,16 @@ end
 
 
 """
-Regularize covariance matrix, by limiting condition number of the
-associated correlation matrix, and setting off diagonal values of the
-correlation below a threshold (τ) to zero.
+Regularize correlation matrix, by limiting the condition number `c`, and
+putting all correlations below threshold `τ` to zero.
 """
-function regularize_Σ_cor(Σ::Union{Symmetric, Diagonal}, c::Float64, τ::Float64)
-    @assert τ >=0 && τ < 1 && c > 0
-    σ² = diag(Σ)
-    R = cov_to_cor(Σ)
+function regularize_cor(
+    R::Union{Symmetric, Diagonal},
+    c::Float64,
+    τ::Float64
+    )
+    @assert c > 0
+    @assert τ >= 0 && τ < 1
     λ = eigvals(R)
     cond = maximum(λ)/minimum(λ)
     if cond > c
@@ -96,11 +90,41 @@ function regularize_Σ_cor(Σ::Union{Symmetric, Diagonal}, c::Float64, τ::Float
         R = (1/(1+δ)).*(R + δ*I)
     end
     R = Matrix(R)
-    R[R .< τ] .= 0
-    R = Symmetric(R)
-    Σ = cor_to_cov(R, σ²)
+    R[abs.(R) .< τ] .= 0  # Don't need upper thresh. as we regularize cond.
+    Symmetric(Matrix(R))
 end
 
+
+"""
+Regularize the correlation matrix, by shrinking to the reference to make
+variances fall within thresholds. lo and hi are multiplied by the variances
+of the reference to find thresholds. Shrinkage is carried out using
+Σ = αΣ + (1 - α)ref.
+"""
+function regularize_Σ_merge(
+    Σ::Union{Diagonal, Symmetric},
+    ref::Union{Diagonal, Symmetric},
+    lo::Float64 = 0.1,
+    hi::Float64 = 2.  # 2 Times the reference is limit
+    )
+
+    σ² = diag(Σ)
+    ratios = σ² ./ diag(ref)
+    if any(ratios .< lo)
+        σ²ᵢ = σ²[findmin(ratios)[2]]
+        r = diag(ref)[findmin(ratios)[2]]
+        α = (r*(lo-1)) / (σ²ᵢ - r)
+        Σ = α .* Σ + (1 - α) .* ref
+    end
+
+    if any(ratios .> hi)
+        σ²ᵢ = σ²[findmax(ratios)[2]]
+        r = diag(ref)[findmax(ratios)[2]]
+        α = (r*(hi-1)) / (σ²ᵢ - r)
+        Σ = α*Σ + (1 - α) * ref
+    end
+    Symmetric(Matrix(Σ))
+end
 
 
 """
@@ -118,64 +142,12 @@ end
 # Summary functions for debugging/logging
 max_var(P::AbstractMatrix) = maximum(diag(P))
 min_var(P::AbstractMatrix) = minimum(diag(P))
-mean_off_diag(M::AbstractMatrix) = begin
-    non_diag = M[setdiff(1:length(M), diagind(M))]
-    mean(non_diag)
+min_off_diag(M::AbstractMatrix) = begin
+    off_diag = M[setdiff(1:length(M), diagind(M))]
+    minimum(off_diag)
 end
 
-
-
-
-
-
-
-
-
-
-#Use weighted average of determinant to scale P. α is the weight parameter,
-#If α=0, then P is scaled to have determinant matching the reference, as
-#α→∞, P is not scaled.
-#"""
-#function cov_logdet_reg(
-#    P::AbstractMatrix,
-#    ref_cov::AbstractMatrix,
-#    α::Float64
-#    )
-#    @assert α >=0 && α <=1
-#    det_P = det(P)
-#    det_target = α*det_P + (1-α)*det(ref_cov)
-#    scale = (det_target/det_P)^(1/size(P, 1))
-#    P = scale * P
-#    @assert det(P) ≈ det_target
-#    P
-#end
-#
-
-
-
-
-
-
-
-# # Just for now
-# # TODO better method?
-# """
-# Uses the same as bove, but just inverts the result.
-# """
-# @kwdef struct KitchenSinkH <: AbstractRegularizer
-#     "Thredhold condition number of the correlation matrix."
-#     c = 50
-#     "Threshold correlation below which set to zero."
-#     τ = 0.05
-#     "A reference distribution, e.g. a multiple of the prior or init_P."
-#     ref::Sampleable
-# end
-#
-# function regularize(H::Symmetric, method::KitchenSinkH)
-#     @debug "- H Pre-reg H: cond=$(cond(H)) det=$(cond(H))"
-#     @unpack c, τ, ref = method
-#     ksp = KitchenSinkP(c, τ, ref)
-#     H = regularize(H, ksp)^-1
-#     @debug "- H Post-reg H: cond=$(cond(H)) det=$(cond(H))"
-#     H
-# end
+max_off_diag(M::AbstractMatrix) = begin
+    off_diag = M[setdiff(1:length(M), diagind(M))]
+    maximum(off_diag)
+end

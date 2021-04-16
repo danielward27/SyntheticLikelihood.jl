@@ -6,13 +6,18 @@ true_mean = [1.,1000]
 true_cov = [9 0; 9 0]
 
 d = MvNormal(2, 3) # Zero mean sd 5
-peturbed = peturb(true_mean, d, 1000)
+peturbed = peturb(true_mean, d; n = 1000)
 
 sample_mean = mean.(eachcol(peturbed))
 sample_cov = cov(peturbed)
 
 @test isapprox(true_mean, sample_mean; atol = 3)
 @test isapprox(true_cov, sample_cov; atol = 20)  # Note uses norm
+
+# Peturb with prior and check constraints satisfied
+prior = Product([LogNormal(), LogNormal()])
+peturbed = peturb([1.,1], d, θ -> insupport(prior, θ); n=100)
+@test !any(peturbed .< 0)
 
 ## Test stack_arrays
 stack_arrays = SyntheticLikelihood.stack_arrays
@@ -34,9 +39,8 @@ remove_invariant = SyntheticLikelihood.remove_invariant
 
 cov_to_cor = SyntheticLikelihood.cov_to_cor
 A = rand(3,3); A = Symmetric(A'A + I)
-σ² = diag(A)
 
-R = cov_to_cor(A)
+R, σ² = cov_to_cor(A)
 @test diag(R) ≈ ones(3)
 
 cor_to_cov = SyntheticLikelihood.cor_to_cov
@@ -75,5 +79,17 @@ X, y = standardize(X, y)
 actual_mean = mean.(eachcol(X))
 actual_sd = std.(eachcol(X))
 
-@test isapprox(expected_mean, actual_mean; atol=1e-15)
-@test isapprox(expected_sd, actual_sd; atol=1e-15)
+@test isapprox(expected_mean, actual_mean; atol=1e-10)
+@test isapprox(expected_sd, actual_sd; atol=1e-10)
+
+outlier_rows = SyntheticLikelihood.outlier_rows
+A = rand(1000, 2)
+A[20, 1] = 20
+A[60, 2] = -20
+
+outlier_ind = findall(outlier_rows(A))
+@test outlier_ind == [20, 60]
+
+rm_outliers = SyntheticLikelihood.rm_outliers
+a, b = rm_outliers(A, A)
+@test a == b == A[setdiff(1:size(A, 1), outlier_ind), :]

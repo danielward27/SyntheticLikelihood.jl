@@ -22,10 +22,11 @@ end
      local_approximation::LocalApproximation,
      θ::Vector{Float64}
      )
-     @unpack simulator, summary, P, n_sim, s_true = local_approximation
+     @unpack simulator, summary, P, n_sim, s_true, valid_params = local_approximation
      θᵢ = θ
-     θ = peturb(θᵢ, P, n_sim)
+     θ = peturb(θᵢ, P, valid_params; n = n_sim)
      s = simulate_n_s(θ; simulator, summary)
+     s, θ = rm_outliers(s, θ)
      s, s_true = remove_invariant(s, s_true)
      s, s_true = standardize(s, s_true)
      μ = quadratic_local_μ(; θᵢ, θ, s)
