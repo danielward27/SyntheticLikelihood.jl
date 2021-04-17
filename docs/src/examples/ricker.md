@@ -137,8 +137,6 @@ samples = data.θ[1000:end, :]
 plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
-
-corrplot(samples, labels = θ_names)
 ```
 
 ---
