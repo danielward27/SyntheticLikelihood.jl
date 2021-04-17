@@ -15,6 +15,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Example" => "examples/ricker.md",
         "Local regression" => "local_regression.md",
         "Samplers" => "samplers.md"
     ],
