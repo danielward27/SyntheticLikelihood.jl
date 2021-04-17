@@ -75,6 +75,7 @@ function get_init_state(
     RiemannianULAState(; θ=init_θ, objective, gradient, hessian)
 end
 
+
 function update!(
     sampler::RiemannianULA,
     local_approximation::LocalApproximation,
@@ -82,16 +83,20 @@ function update!(
     )
     ϵ, θ, ∇  = sampler.step_size, state.θ, state.gradient
     @unpack gradient, θ, hessian = state
+    @unpack P_regularizer, valid_params = local_approximation
 
     la = local_approximation
 
     H⁻¹ = state.hessian^-1
-    H⁻¹ = regularize(H⁻¹, la.P_regularizer)
+    H⁻¹ = regularize(H⁻¹, P_regularizer)
     la.P = MvNormal(H⁻¹)
 
     z = randn(length(θ))
-    state.θ = θ .- (ϵ^2 .* H⁻¹*∇ )/2 .- ϵ*sqrt(H⁻¹) * z
 
+    Δ = (ϵ^2 .* H⁻¹*∇ )/2 .+ ϵ*sqrt(H⁻¹) * z
+    Δ = halve_update_until_valid(Δ, θ, valid_params)
+    
+    state.θ = θ .- Δ
     ogh = obj_grad_hess(la, state.θ)
     state.objective = ogh.objective
     state.gradient = ogh.gradient
@@ -129,3 +134,33 @@ function run_sampler!(
     end
     simplify_data(data)
 end
+
+
+
+"""
+Halve update term until valid proposal found (e.g. with non-zero prior density).
+Returns the modified update term.
+
+$(SIGNATURES)
+## Arguments
+- `θ` Current parameter vector.
+- `Δ` Proposed update term.
+- `valid_params` Returns true if valid and false if invalid proposal.
+"""
+function halve_update_until_valid(
+    Δ::Vector{Float64},
+    θ::Vector{Float64},
+    valid_params::Function
+    )
+    for i in 1:100
+        proposal = θ .- Δ
+        if valid_params(proposal)
+            return Δ
+        else
+            Δ = Δ ./ 2
+        end
+    end
+    error("The sampler could not find a valid update.")
+    nothing
+end
+

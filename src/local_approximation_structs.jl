@@ -14,7 +14,7 @@ Base.@kwdef mutable struct LocalLikelihood <: LocalApproximation
     P::AbstractMvNormal
     "The number of peturbed points to use for the local regression."
     n_sim::Integer = 1000
-    "Adaptive proposal distribution. Should not be set manually."
+    "Method to regularise the inverse Hessian to a reasonable covariance matrix."
     P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(Matrix(cov(P))))
     """
     Parameter constraints. Function that takes a parameter vector and returns
@@ -28,7 +28,7 @@ end
 """
 Contains the hyperparameters for getting a local approximation
 of the posterior. In contrast to the likelihood version, a prior is provided,
-P is by defualt a MvNormal with covariance 0.5*cov(prior), and parameter 
+P is by defualt a MvNormal with covariance 0.5*cov(prior), and 
 valid_params checks whether proposed points fall within the prior support.
 
 $(FIELDS)
@@ -41,6 +41,6 @@ Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
     s_true::Vector{Float64}
     P::AbstractMvNormal = MvNormal(0.5.*cov(prior))
     n_sim::Integer = 1000
-    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(Matrix(cov(prior))))
+    P_regularizer::AbstractRegularizer = KitchenSink(ref = Symmetric(Matrix(0.5.*cov(prior))))
     valid_params::Function = θ -> insupport(prior, θ)
 end
