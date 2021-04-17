@@ -1,5 +1,6 @@
 module SyntheticLikelihood
 
+using StatsPlots
 using Distributions
 using DocStringExtensions
 using LinearAlgebra
@@ -21,6 +22,7 @@ include("samplers.jl")
 include("utils.jl")
 include("data_collector.jl")
 include("simulate_n_s.jl")
+include("plotting.jl")
 
 # simulate n s
 export simulate_n_s
@@ -40,5 +42,8 @@ export ULA, RiemannianULA, run_sampler!
 
 # utils
 export peturb
+
+# plotting
+export plot_prior_posterior_density
 
 end
