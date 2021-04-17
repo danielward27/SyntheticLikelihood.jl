@@ -4,7 +4,7 @@
 
 # ### Imports
 using SyntheticLikelihood, Distributions, StatsPlots, Random
-Random.seed!(1)
+Random.seed!(42)
 nothing #hide
 
 # ### Define the simulator
@@ -59,7 +59,7 @@ nothing #hide
 # Distributions.jl package (for independent priors for each parameter).
 # Below a `Product` distribution is used.
 
-prior = Product([Uniform(3, 10), Uniform(0, 5), Uniform(0, 5)])
+prior = Product([Uniform(4, 10), Uniform(0, 5), Uniform(0, 5)])
 nothing #hide
 
 # ### `LocalPosterior`
@@ -109,5 +109,6 @@ samples = data.θ[1000:end, :]
 plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
+
 
 corrplot(samples, labels = θ_names)

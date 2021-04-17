@@ -64,7 +64,7 @@ function glm_local_Σ(;
             fit = glm(θ, ϵ²[:, i], Gamma(), LogLink(), maxiter=1000) # TODO: Add weights?
             coefs[i, :] = coef(fit)
         catch e
-            println("GLM did not converge. Writing θ (X) and ϵ² (y) to file for easier debugging")
+            println("GLM did not converge. Writing centered θ (X) and ϵ² (y) to file for easier debugging")
 
             open("X.txt", "w") do io
                 writedlm(io, θ)

@@ -10,7 +10,7 @@ the simulating from the noisily observed ricker map.
 
 ```@example ricker
 using SyntheticLikelihood, Distributions, StatsPlots, Random
-Random.seed!(1)
+Random.seed!(42)
 nothing #hide
 ```
 
@@ -76,7 +76,7 @@ Distributions.jl package (for independent priors for each parameter).
 Below a `Product` distribution is used.
 
 ```@example ricker
-prior = Product([Uniform(3, 10), Uniform(0, 5), Uniform(0, 5)])
+prior = Product([Uniform(4, 10), Uniform(0, 5), Uniform(0, 5)])
 nothing #hide
 ```
 
@@ -137,6 +137,7 @@ samples = data.θ[1000:end, :]
 plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
+
 
 corrplot(samples, labels = θ_names)
 ```
