@@ -3,7 +3,8 @@
 ## Sampling
 ```@autodocs
 Private = false
-pages = ["samplers.jl"]
+Modules = [SyntheticLikelihood]
+Pages = ["samplers.jl"]
 ```
 
 #### Implementation details
@@ -18,7 +19,8 @@ To implement a new sampler:
 ## Objectives
 ```@autodocs
 Private = false
-pages = ["local_approximation_structs.jl"]
+Modules = [SyntheticLikelihood]
+Pages = ["local_approximation_structs.jl"]
 ```
 #### Implementation details
 To implement a new objective:
@@ -32,12 +34,14 @@ definite, we may need to modify the Hessian (or its inverse) in some way.
 
 ```@autodocs
 Private = false
-pages = ["matrix_regularizers.jl"]
+Modules = [SyntheticLikelihood]
+Pages = ["matrix_regularizers.jl"]
 ```
 
 ## Plotting
 Some convenience functions for plotting:
 ```@autodocs
 Private = false
-pages = ["plotting.jl"]
+Modules = [SyntheticLikelihood]
+Pages = ["plotting.jl"]
 ```
