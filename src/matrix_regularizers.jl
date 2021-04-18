@@ -16,9 +16,9 @@ See http://parker.ad.siu.edu/Olive/slch6.pdf for correlation regularization,
 and https://doi.org/10.1007/978-3-642-40020-9_35 for soft abs.
 """
 @kwdef struct KitchenSink <: AbstractRegularizer
-    "Reference covariance matrix, e.g. prior or the initial P matrix."
+    "Reference covariance matrix."
     ref::Union{Diagonal, Symmetric}
-    "soft abs threshold. Minimum eigenvalue is 1/α. α=Inf is absolute value."
+    """soft abs threshold. Minimum eigenvalue is 1/α. α=Inf is absolute value."""
     α::Float64 = 1 / (minimum(eigvals(ref))/1e3)
     """Minimum limit for variance compared to ref. Shrinks towards reference if
     exceeded. See `regularize_Σ_merge`."""
