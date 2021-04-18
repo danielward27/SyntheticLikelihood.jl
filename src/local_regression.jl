@@ -108,30 +108,17 @@ Estimate negative log-posterior, and its gradient and hessian.
 function obj_grad_hess(local_posterior::LocalPosterior, θ::Vector{Float64})
     neg_likelihood_ogh = likelihood_obj_grad_hess(local_posterior, θ)
     posterior_calc(local_posterior.prior, neg_likelihood_ogh, θ)
-    # TODO Handle cases where prior support is bounded?
-    # TODO need a way to check valid proposals in simulate n_s.
 end
 
 
 
-
-
-
-
-
-
-
-
-
-## Bayesian
-
-# For Bayesian analyses we also need the gradient and hessian of -prior:
-
+"Automatic differentiation to get prior gradient."
 function log_prior_gradient(d::Sampleable, θ::Vector{Float64})
     f(θ) = loglikelihood(d, θ)
     ForwardDiff.gradient(f, θ)
 end
 
+"Automatic differentiation to get prior Hessian."
 function log_prior_hessian(d::Sampleable, θ::Vector{Float64})
     f(θ) = loglikelihood(d, θ)
     Symmetric(ForwardDiff.hessian(f, θ))

@@ -28,14 +28,14 @@ include("plotting.jl")
 export simulate_n_s
 
 # Matrix regularization
-export KitchenSink, Flip, regularize
+export KitchenSink, regularize
 
 # likelihood
 export synthetic_likelihood
 
-# local regression
-export Localμ, quadratic_local_μ, LocalΣ, glm_local_Σ, local_likelihood,
-    ObjGradHess, obj_grad_hess, LocalApproximation, LocalLikelihood, LocalPosterior
+# Local approximation structs
+export LocalApproximation, LocalLikelihood, LocalPosterior
+
 
 # Samplers
 export ULA, RiemannianULA, run_sampler!

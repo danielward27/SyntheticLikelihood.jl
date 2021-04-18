@@ -6,12 +6,14 @@ abstract type AbstractRegularizer end
 """
 Carries out the following steps:
 1. Use `soft_abs` to get absolute values of the eigenvalues.
-2. If required, shrink the variances towards the prior.
+2. If required, shrink the variances towards the reference.
 3. Decompose the covariance into the variance and correlation.
-4. Divide the correlation matrix by a constant to reach condition criteria.
+4. Divide the correlation matrix by a constant (if reqiured) to reach condition threshold.
 5. Set non diagonal correlation to zero if < τ
+6. Reconstruct the covariance matrix.
 
-See http://parker.ad.siu.edu/Olive/slch6.pdf for correlation regularization.
+See http://parker.ad.siu.edu/Olive/slch6.pdf for correlation regularization,
+and https://doi.org/10.1007/978-3-642-40020-9_35 for soft abs.
 """
 @kwdef struct KitchenSink <: AbstractRegularizer
     "Reference covariance matrix, e.g. prior or the initial P matrix."
@@ -24,12 +26,13 @@ See http://parker.ad.siu.edu/Olive/slch6.pdf for correlation regularization.
     "Maximum limit for variance compared to ref."
     var_hi::Float64 = 2
     """Maximum condition number of the associated correlation matrix. Shrinks
-    correaltion towards the identity matrix if exceeded."""
+    correlation towards the identity matrix if exceeded."""
     c::Float64 = 10.
     "Threshold correlation below which set to zero."
     τ::Float64 = 0.05
 end
 
+"Regularise the covariance matrix."
 function regularize(Σ::Union{Diagonal, Symmetric}, method::KitchenSink)
     @unpack ref, α, var_lo, var_hi, c, τ = method
     summaries = [cond, det, min_var, max_var, min_off_diag, max_off_diag]

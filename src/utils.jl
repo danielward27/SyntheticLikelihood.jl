@@ -47,6 +47,8 @@ end
 """
 Stacks a vector of consitently sized arrays to make a new array with
 dimensions (length(x), dim(x[1])...).
+
+$(SIGNATURES)
 """
 function stack_arrays(x::Vector)
     @assert all(size(x[1]) == size(el) for el in x)
@@ -68,7 +70,10 @@ macro varname(var)
 end
 
 
-# Used to remove statistics that have zero variance
+"""
+remove columns that have zero variance
+$(SIGNATURES)
+"""
 function remove_invariant(s, s_true; warn=true)
     no_var = var.(eachcol(s)) .≈ 0
     if any(no_var)
@@ -87,7 +92,9 @@ end
 
 
 """
-Standardize to zero mean and standard deviation 1.
+Standardize to zero mean and standard deviation 1. Can also provide a vector
+which will be standardized using the mean and standard deviation of the matrix.
+$(SIGNATURES)
 """
 function standardize(X::AbstractMatrix)
   means = mean.(eachcol(X))
@@ -98,6 +105,7 @@ end
 
 """
 Standardize matrix and vector, using the mean and standard deviation of the matrix.
+$(SIGNATURES)
 """
 function standardize(X::AbstractMatrix, y::AbstractVector)
   means = mean.(eachcol(X))

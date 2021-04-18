@@ -50,10 +50,11 @@ function glm_local_Σ(;
     ϵ² = ϵ.^2  # Distributed as ϵ² ∼ exp(ϕ + ∑vₖθₖ)z, z ∼ χ²(1)
 
     samp_Σ = cov(ϵ)
-    samp_Ψ = Diagonal(samp_Σ)^-0.5 * samp_Σ * Diagonal(samp_Σ)^-0.5  # cor
+    samp_Ψ, = cov_to_cor(Symmetric(samp_Σ))
 
     # Get coefficients of GLM
     coefs = Array{Float64}(undef, nₛ, n_θ+1)
+    ϵ² = min.(ϵ², 15)  # Occasionally too high for exp
     @debug """
     Maximum residual = $(maximum(ϵ²))
     Median residual = $(median(ϵ²))

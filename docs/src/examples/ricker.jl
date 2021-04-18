@@ -1,10 +1,10 @@
-# # Ricker Model Example
+# # Example
 # To see how things work, its easiest to consider an example. Here we consider
 # the simulating from the noisily observed ricker map.
 
 # ### Imports
-using SyntheticLikelihood, Distributions, StatsPlots, Random
-Random.seed!(42)
+using SyntheticLikelihood, Distributions, StatsPlots, StatsBase, Random
+Random.seed!(3)
 nothing #hide
 
 # ### Define the simulator
@@ -32,17 +32,17 @@ nothing #hide
 
 function ricker_summary(x)
     if all(x.==0)
-      return [0., 0., length(x), 0]
+      return [0., 0., length(x), 0, 0, 0, 0]
     else
       s = [mean(x[x.>0]),
         median(x[x.>0]),
         sum(x.==0),
-        sum(x.>10)]
+        sum(x.>10),
+        autocov(x, [1, 2, 3])...]
       return s
     end
   end
 nothing #hide
-
 
 # ### Ground truth
 # As this is a toy example, we will generate "true" parameters, alongside a
@@ -54,12 +54,13 @@ s_true = ricker_summary(x_true)
 nothing #hide
 
 # ### The prior
-# Priors can either be multivariate distribution from the Distributions.jl
-# package, or be specified as a `Product` distribution from the
-# Distributions.jl package (for independent priors for each parameter).
+# Priors can either be multivariate distribution or be specified as a `Product`
+# distribution (for independent priors for each parameter), in either case using
+# [`Distributions.jl`](https://juliastats.org/Distributions.jl/stable/)
 # Below a `Product` distribution is used.
 
-prior = Product([Uniform(4, 10), Uniform(0, 5), Uniform(0, 5)])
+
+prior = Product([LogNormal(2, 0.4), Uniform(0, 5), Uniform(0, 5)])
 nothing #hide
 
 # ### `LocalPosterior`
@@ -67,10 +68,15 @@ nothing #hide
 # The local regression MCMC technique estimates the 
 # gradient and Hessian of the likelihood at each iteration. To achieve this
 # rather than carrying out many simulations at a single parameter value to
-# estimate the likelihood, many simulations from a "local" area around the
+# estimate the likelihood (as in standard synthetic likelihood),
+# many simulations from a "local" area around the
 # current θ value must be used. One can sample parameters consistent with
 # the data using [`LocalLikelihood`](@ref). However here we consider Bayesian
-# inference, so will use [`LocalPosterior`](@ref).
+# inference, so will use [`LocalPosterior`](@ref). This interanally uses
+# [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the
+# likelihood as before, and then uses automatic differentiation of the prior to
+# get the gradient and Hessian of the prior. These can then be used to
+# calculcate the gradient and Hessian of the posterior.
 
 local_posterior = LocalPosterior(;
   simulator = ricker,
@@ -91,7 +97,7 @@ nothing #hide
 # ### The sampler
 # We can then sample from the posterior. Below I will use the Riemannian
 # Unadjusted Langevin sampler ([`RiemannianULA`](@ref)) with a step size of 0.1.
-# A simple explanation of this sampler is that it uses a Newton update,
+# A rough explanation of this sampler is that it uses a Newton update,
 # and adds some noise at each iteration.
 rula = RiemannianULA(0.1)
 init_θ = [8, 4, 0.1]
@@ -105,10 +111,9 @@ plot(data.θ, layout = 3, xlabel = θ_names, labels = false)
 
 # We can remove the burn in and plot the marginal densities. The package
 # provides [`plot_prior_posterior_density`](@ref) to achieve this simply.
-samples = data.θ[1000:end, :]
+samples = data.θ[1001:end, :]
 plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
-
 
 corrplot(samples, labels = θ_names)

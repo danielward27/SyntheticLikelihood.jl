@@ -1,10 +1,11 @@
 using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra, ForwardDiff
 
-quadratic_design_matrix = SyntheticLikelihood.quadratic_design_matrix
-linear_regression = SyntheticLikelihood.linear_regression
-simulator = SyntheticLikelihood.deterministic_test_simulator
+using SyntheticLikelihood: quadratic_design_matrix, linear_regression,
+    deterministic_test_simulator, quadratic_local_μ, glm_local_Σ, LocalΣ,
+    ObjGradHess, log_prior_gradient, log_prior_hessian, posterior_calc
 
 Random.seed!(1)
+simulator = deterministic_test_simulator
 
 X = [1 2; 4 3]
 
@@ -25,8 +26,6 @@ X, combinations = quadratic_design_matrix(X)
 
 
 ## Test quadratic_local_μ gives expected results for deterministic quadratic simulator
-
-
 θᵢ = [2.0, 5]
 P = MvNormal(length(θᵢ), 2)
 θ = peturb(θᵢ, P; n = 100)
@@ -130,10 +129,6 @@ norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
 
 
 ## Test automatic differentiation of priors (for product and mv dists)
-
-log_prior_gradient = SyntheticLikelihood.log_prior_gradient
-log_prior_hessian = SyntheticLikelihood.log_prior_hessian
-
 sd = 2.
 prod_dist = Product([Normal(1,sd), Normal(2,sd), Normal(3,sd)])
 mv_dist = MvNormal([1,2,3], sd)
@@ -174,7 +169,7 @@ neg_likelihood_ogh = ObjGradHess(
 )
 
 
-actual = SyntheticLikelihood.posterior_calc(
+actual = posterior_calc(
     prior, neg_likelihood_ogh, test_θ
     )
 
