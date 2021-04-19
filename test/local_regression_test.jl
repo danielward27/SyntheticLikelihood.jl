@@ -2,7 +2,8 @@ using SyntheticLikelihood, Test, Distributions, Random, LinearAlgebra, ForwardDi
 
 using SyntheticLikelihood: quadratic_design_matrix, linear_regression,
     deterministic_test_simulator, quadratic_local_μ, glm_local_Σ, LocalΣ,
-    ObjGradHess, log_prior_gradient, log_prior_hessian, posterior_calc
+    ObjGradHess, log_prior_gradient, log_prior_hessian, posterior_calc,
+    peturb, simulate_n_s
 
 Random.seed!(1)
 simulator = deterministic_test_simulator

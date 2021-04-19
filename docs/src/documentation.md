@@ -45,3 +45,9 @@ Private = false
 Modules = [SyntheticLikelihood]
 Pages = ["plotting.jl"]
 ```
+
+## Private/Unexported interface
+```@autodocs
+Public = false
+Modules = [SyntheticLikelihood]
+```

@@ -1,6 +1,6 @@
 using SyntheticLikelihood, Test, Distributions
 
-using SyntheticLikelihood: deterministic_test_simulator
+using SyntheticLikelihood: peturb, simulate_n_s, deterministic_test_simulator
 θ_true = [2., 5]
 n_sim = 100
 

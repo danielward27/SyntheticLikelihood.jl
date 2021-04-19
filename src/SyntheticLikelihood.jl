@@ -24,8 +24,6 @@ include("data_collector.jl")
 include("simulate_n_s.jl")
 include("plotting.jl")
 
-# simulate n s
-export simulate_n_s
 
 # Matrix regularization
 export KitchenSink, regularize
@@ -36,12 +34,8 @@ export synthetic_likelihood
 # Local approximation structs
 export LocalApproximation, LocalLikelihood, LocalPosterior
 
-
 # Samplers
 export ULA, RiemannianULA, run_sampler!
-
-# utils
-export peturb
 
 # plotting
 export plot_prior_posterior_density

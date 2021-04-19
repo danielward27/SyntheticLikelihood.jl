@@ -74,16 +74,16 @@ end
 remove columns that have zero variance
 $(SIGNATURES)
 """
-function remove_invariant(s, s_true; warn=true)
+function remove_invariant(s, s_true)
     no_var = var.(eachcol(s)) .≈ 0
     if any(no_var)
-        if warn
-            if sum(no_var) == size(s, 2)
-                error("None of the summary statistics had any variance.")
-            end
-            @warn "$(@varname(s)) has zero variance columns at index "*
-            "$(findall(no_var)). Removing these columns."
+        if sum(no_var) == size(s, 2)
+            error("None of the summary statistics had any variance.")
         end
+        @debug """
+        $(@varname(s)) has zero variance columns at index
+        $(findall(no_var)). Removing these columns.
+        """
         s = s[:, .!no_var]
         s_true = s_true[.!no_var]
     end

@@ -1,7 +1,7 @@
 using SyntheticLikelihood, Test, Statistics,
     LinearAlgebra, Distributions, Random
 
-using SyntheticLikelihood: stack_arrays, remove_invariant, cov_to_cor,
+using SyntheticLikelihood: peturb, stack_arrays, remove_invariant, cov_to_cor,
     cor_to_cov, ObjectSummaryLogger, add_log!, get_pretty_table, standardize,
     outlier_rows, rm_outliers
 
@@ -37,7 +37,7 @@ AV_expected[3, :, :] = [1 2; 3 4]
 @test_throws AssertionError stack_arrays([[1,2], [1,2,3]])
 
 
-@test remove_invariant([1 1 1; 2 1 2], [1,2,3]; warn=false) ==  ([1 1; 2 2], [1,3])
+@test remove_invariant([1 1 1; 2 1 2], [1,2,3]) ==  ([1 1; 2 2], [1,3])
 
 A = rand(3,3); A = Symmetric(A'A + I)
 

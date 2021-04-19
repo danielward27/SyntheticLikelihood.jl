@@ -6,6 +6,7 @@ EditURL = "<unknown>/example.jl"
 To see how things work, its easiest to consider an example. Here we consider
 the simulating from the noisily observed ricker map.
 
+
 ### Imports
 
 ```@example example
