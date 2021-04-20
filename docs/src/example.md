@@ -10,7 +10,7 @@ the simulating from the noisily observed ricker map.
 
 ```@example example
 using SyntheticLikelihood, Distributions, StatsPlots, StatsBase, Random
-Random.seed!(3)
+Random.seed!(1)
 nothing #hide
 ```
 
@@ -135,7 +135,7 @@ StatsPlots.jl provides most the tools required for plotting results.
 plot(data.θ, layout = 3, xlabel = θ_names, labels = false)
 ```
 
-We can remove the burn in and plot the marginal densities. The package
+We can remove the burn in and plot the marginal densities. SyntheticLikelihood.jl
 provides [`plot_prior_posterior_density`](@ref) to achieve this simply.
 
 ```@example example
@@ -143,7 +143,11 @@ samples = data.θ[1001:end, :]
 plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
+```
 
+# We can plot the correlation structure with StatsPlots.jl:
+
+```@example example
 corrplot(samples, labels = θ_names)
 ```
 
