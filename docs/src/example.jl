@@ -116,5 +116,5 @@ plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
 
-# # We can plot the correlation structure with StatsPlots.jl:
+# We can plot the correlation structure with StatsPlots.jl:
 corrplot(samples, labels = θ_names)
