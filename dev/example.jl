@@ -4,7 +4,7 @@
 
 # ### Imports
 using SyntheticLikelihood, Distributions, StatsPlots, StatsBase, Random
-Random.seed!(1)
+Random.seed!(3)
 nothing #hide
 
 # ### Define the simulator
@@ -102,7 +102,7 @@ nothing #hide
 rula = RiemannianULA(0.1)
 init_θ = [8, 4, 0.1]
 n_steps = 2000
-data = run_sampler!(rula, local_posterior; init_θ, n_steps)
+data = run_sampler!(rula, local_posterior; init_θ, n_steps, progress = false)
 
 # ### Plotting the results
 # StatsPlots.jl provides most the tools required for plotting results.
@@ -116,5 +116,5 @@ plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
 
-# # We can plot the correlation structure with StatsPlots.jl:
+# We can plot the correlation structure with StatsPlots.jl:
 corrplot(samples, labels = θ_names)
