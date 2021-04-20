@@ -102,7 +102,7 @@ nothing #hide
 rula = RiemannianULA(0.1)
 init_θ = [8, 4, 0.1]
 n_steps = 2000
-data = run_sampler!(rula, local_posterior; init_θ, n_steps)
+data = run_sampler!(rula, local_posterior; init_θ, n_steps, progress = false)
 
 # ### Plotting the results
 # StatsPlots.jl provides most the tools required for plotting results.

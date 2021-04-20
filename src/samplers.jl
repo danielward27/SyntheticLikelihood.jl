@@ -182,20 +182,28 @@ function run_sampler!(
     local_approximation::LocalApproximation;
     init_θ::Vector{Float64},
     n_steps::Integer,
-    collect_data::Vector{Symbol} = [:θ, :objective]
+    collect_data::Vector{Symbol} = [:θ, :objective],
+    progress = true
     )
 
     state = get_init_state(sampler, local_approximation, init_θ)
     data = init_data_tuple(state, collect_data, n_steps)
 
-    @showprogress for i in 1:n_steps
-        update!(sampler, local_approximation, state)
-        add_state!(data, state, i)
-        @debug "Iteration $(i)" state.θ
+    if progress
+        @showprogress for i in 1:n_steps
+            @debug "Iteration $(i)" state.θ
+            update!(sampler, local_approximation, state)
+            add_state!(data, state, i)
+        end
+    else
+        for i in 1:n_steps
+            @debug "Iteration $(i)" state.θ
+            update!(sampler, local_approximation, state)
+            add_state!(data, state, i)
+        end
     end
     simplify_data(data)
 end
-
 
 
 
