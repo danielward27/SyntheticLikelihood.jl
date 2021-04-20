@@ -12,6 +12,7 @@ using PrettyTables
 import Base.@kwdef
 using StatsBase
 using DelimitedFiles
+using ProgressMeter
 
 include("matrix_regularizers.jl")
 include("local_approximation_structs.jl")

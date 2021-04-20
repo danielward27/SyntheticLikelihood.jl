@@ -4,7 +4,7 @@
 
 # ### Imports
 using SyntheticLikelihood, Distributions, StatsPlots, StatsBase, Random
-Random.seed!(1)
+Random.seed!(3)
 nothing #hide
 
 # ### Define the simulator

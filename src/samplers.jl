@@ -188,13 +188,14 @@ function run_sampler!(
     state = get_init_state(sampler, local_approximation, init_θ)
     data = init_data_tuple(state, collect_data, n_steps)
 
-    for i in 1:n_steps
+    @showprogress for i in 1:n_steps
         update!(sampler, local_approximation, state)
         add_state!(data, state, i)
         @debug "Iteration $(i)" state.θ
     end
     simplify_data(data)
 end
+
 
 
 
