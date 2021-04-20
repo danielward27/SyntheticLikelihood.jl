@@ -4,7 +4,7 @@
 
 # ### Imports
 using SyntheticLikelihood, Distributions, StatsPlots, StatsBase, Random
-Random.seed!(3)
+Random.seed!(1)
 nothing #hide
 
 # ### Define the simulator
@@ -109,11 +109,12 @@ data = run_sampler!(rula, local_posterior; init_θ, n_steps)
 θ_names = ["r" "ϕ" "σ"]
 plot(data.θ, layout = 3, xlabel = θ_names, labels = false)
 
-# We can remove the burn in and plot the marginal densities. The package
+# We can remove the burn in and plot the marginal densities. SyntheticLikelihood.jl
 # provides [`plot_prior_posterior_density`](@ref) to achieve this simply.
 samples = data.θ[1001:end, :]
 plot_prior_posterior_density(
   prior, samples, θ_true; θ_names
 )
 
+# # We can plot the correlation structure with StatsPlots.jl:
 corrplot(samples, labels = θ_names)
