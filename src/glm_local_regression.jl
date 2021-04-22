@@ -70,7 +70,7 @@ function glm_local_Σ(;
                 GLM did not converge. Corresponding variance set to sample
                 covariance.
                 """
-                fallback = zeros(n_θ)
+                fallback = zeros(n_θ + 1)
                 fallback[1] = log(samp_Σ[i,i])
                 coefs[i, :] = fallback
             else
