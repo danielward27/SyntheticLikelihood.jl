@@ -67,11 +67,11 @@ function glm_local_Σ(;
         catch e
             if e isa StatsBase.ConvergenceException
                 @warn """
-                GLM did not converge. This may occur if the quadratic regression
-                is biased. Corresponding variance set to 0.1*sample covariance.
+                GLM did not converge. Corresponding variance set to sample
+                covariance.
                 """
                 fallback = zeros(n_θ + 1)
-                fallback[1] = log(0.1*samp_Σ[i,i])
+                fallback[1] = log(samp_Σ[i,i])
                 coefs[i, :] = fallback
             else
                 throw(e)
