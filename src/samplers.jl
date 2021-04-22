@@ -105,67 +105,6 @@ function update!(
 end
 
 
-
-## Riemannian Metropolis Adjusted Langevin Algorithm
-"""
-Sampler object for Riemannian ULA.
-Uses the update: θ := θ - ϵ²H⁻¹*∇ - ϵ√H⁻¹ z, where z ∼ N(0, I).
-
-    $(FIELDS)
-"""
-@kwdef struct RiemannianULA <: AbstractSampler
-    step_size::Float64
-end
-
-@kwdef mutable struct RiemannianULAState <: AbstractSamplerState
-    θ::AbstractVector{Float64}
-    objective::Float64
-    gradient::Vector{Float64}
-    hessian::Symmetric{Float64}
-    counter::Integer = 0
-end
-
-function get_init_state(
-    sampler::RiemannianULA,
-    local_approximation::LocalApproximation,
-    init_θ::Vector{Float64}
-    )
-    ogh = obj_grad_hess(local_approximation, init_θ)
-    @unpack objective, gradient, hessian = ogh
-    RiemannianULAState(; θ=init_θ, objective, gradient, hessian)
-end
-
-
-function update!(
-    sampler::RiemannianULA,
-    local_approximation::LocalApproximation,
-    state::RiemannianULAState
-    )
-    ϵ, θ, ∇  = sampler.step_size, state.θ, state.gradient
-    @unpack gradient, θ, hessian = state
-    @unpack P_regularizer, valid_params = local_approximation
-
-    la = local_approximation
-
-    H⁻¹ = state.hessian^-1
-    H⁻¹ = regularize(H⁻¹, P_regularizer)
-    la.P = MvNormal(H⁻¹)
-
-    z = randn(length(θ))
-
-    Δ = (ϵ^2 .* H⁻¹*∇ )/2 .+ ϵ*sqrt(H⁻¹) * z
-    Δ = halve_update_until_valid(Δ, θ, valid_params)
-
-    state.θ = θ .- Δ
-    ogh = obj_grad_hess(la, state.θ)
-    state.objective = ogh.objective
-    state.gradient = ogh.gradient
-    state.hessian = ogh.hessian
-    state.counter += 1
-end
-
-
-
 #---- Run the sampling algorithm ----
 
 """

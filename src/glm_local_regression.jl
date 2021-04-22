@@ -65,16 +65,18 @@ function glm_local_Σ(;
             fit = glm(θ, ϵ²[:, i], Gamma(), LogLink(), maxiter=1000) # TODO: Add weights?
             coefs[i, :] = coef(fit)
         catch e
-            println("GLM did not converge. Writing centered θ (X) and ϵ² (y) to file for easier debugging")
-
-            open("X.txt", "w") do io
-                writedlm(io, θ)
+            if e isa StatsBase.ConvergenceException
+                @warn """
+                GLM did not converge. Corresponding variance set to sample
+                covariance.
+                """
+                fallback = zeros(n_θ + 1)
+                fallback[1] = log(samp_Σ[i,i])
+                coefs[i, :] = fallback
+            else
+                throw(e)
             end
 
-            open("y.txt", "w") do io
-                writedlm(io, ϵ²[:, i])
-            end
-            throw(e)
         end
     end
 
