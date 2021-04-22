@@ -93,7 +93,7 @@ function update!(
 
     z = randn(length(θ))
 
-    Δ = (ϵ^2 .* H⁻¹*∇)/2 .+ ϵ*sqrt(H⁻¹) * z
+    Δ = (ϵ^2 .* H⁻¹*∇ )/2 .+ ϵ*sqrt(H⁻¹) * z
     Δ = halve_update_until_valid(Δ, θ, valid_params)
 
     state.θ = θ .- Δ
