@@ -27,6 +27,7 @@ Parameters = "0.12"
 PrettyTables = "1.0"
 ProgressMeter = "1.5"
 StatsBase = "0.33"
+StatsPlots = "0.14"
 julia = "1.6"
 
 [extras]
