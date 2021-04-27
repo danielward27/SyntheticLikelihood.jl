@@ -83,11 +83,11 @@ Get the posterior, gradient and Hessian of negative log-posterior, from the
 prior and the objective, gradient and hessian of the negative log-likelihood.
 """
 function posterior_calc(
-    prior::Sampleable,
+    prior::Prior,
     neg_likelihood_ogh::ObjGradHess,
     θ::Vector{Float64}
     )
-    obj = neg_likelihood_ogh.objective - loglikelihood(prior, θ)
+    obj = neg_likelihood_ogh.objective - logpdf(prior, θ)
     grad = neg_likelihood_ogh.gradient - log_prior_gradient(prior, θ)
     hess = neg_likelihood_ogh.hessian - log_prior_hessian(prior, θ)
     ObjGradHess(obj, grad, hess)
@@ -108,18 +108,4 @@ Estimate negative log-posterior, and its gradient and hessian.
 function obj_grad_hess(local_posterior::LocalPosterior, θ::Vector{Float64})
     neg_likelihood_ogh = likelihood_obj_grad_hess(local_posterior, θ)
     posterior_calc(local_posterior.prior, neg_likelihood_ogh, θ)
-end
-
-
-
-"Automatic differentiation to get prior gradient."
-function log_prior_gradient(d::Sampleable, θ::Vector{Float64})
-    f(θ) = loglikelihood(d, θ)
-    ForwardDiff.gradient(f, θ)
-end
-
-"Automatic differentiation to get prior Hessian."
-function log_prior_hessian(d::Sampleable, θ::Vector{Float64})
-    f(θ) = loglikelihood(d, θ)
-    Symmetric(ForwardDiff.hessian(f, θ))
 end

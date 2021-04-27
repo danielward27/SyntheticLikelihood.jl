@@ -54,13 +54,11 @@ s_true = ricker_summary(x_true)
 nothing #hide
 
 # ### The prior
-# Priors can either be multivariate distribution or be specified as a `Product`
-# distribution (for independent priors for each parameter), in either case using
-# [`Distributions.jl`](https://juliastats.org/Distributions.jl/stable/)
-# Below a `Product` distribution is used.
+# Priors are specified as a vector of distributions, which can be arbitrary
+# combinations of univariate and multivariate distributions.
+# The distributions should be from [`Distributions.jl`](https://juliastats.org/Distributions.jl/stable/).
 
-
-prior = Product([LogNormal(2, 0.4), Uniform(0, 5), Uniform(0, 5)])
+prior = Prior([LogNormal(2, 0.4), Uniform(0, 5), Uniform(0, 5)])
 nothing #hide
 
 # ### `LocalPosterior`
@@ -74,7 +72,7 @@ nothing #hide
 # the data using [`LocalLikelihood`](@ref). However here we consider Bayesian
 # inference, so will use [`LocalPosterior`](@ref). This interanally uses
 # [`LocalLikelihood`](@ref) to estimate the the gradient and Hessian of the
-# likelihood as before, and then uses automatic differentiation of the prior to
+# likelihood, and then uses automatic differentiation of the prior to
 # get the gradient and Hessian of the prior. These can then be used to
 # calculcate the gradient and Hessian of the posterior.
 

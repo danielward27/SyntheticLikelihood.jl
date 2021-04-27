@@ -21,7 +21,7 @@ end
 
 """
 Use a gamma distributed GLM with log link function to estimate the local properties
-    of the covariance matrix of the statistics Σ.  θ should not have a bias term (added internally).
+    of the covariance matrix of the statistics Σ. θ should not have a bias term (added internally).
 
 Specifically, this function:
 - Creates a rough initial Σ estimate using `cov(ϵ)`.
@@ -65,7 +65,7 @@ function glm_local_Σ(;
             fit = glm(θ, ϵ²[:, i], Gamma(), LogLink(), maxiter=1000) # TODO: Add weights?
             coefs[i, :] = coef(fit)
         catch e
-            if e isa StatsBase.ConvergenceException
+            if (e isa AssertionError) || (e isa StatsBase.ConvergenceException)
                 @warn """
                 GLM did not converge. Corresponding variance set to sample
                 covariance.
