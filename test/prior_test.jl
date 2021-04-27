@@ -45,6 +45,6 @@ prior_mv = Prior([MvLogNormal([1.,2.,3.])])
 
 
 prior = Prior([MvNormal([1.,2.]), Normal()])
-@test sample(prior) isa Vector{Float64}
-@test sample(prior, 10) isa Matrix{Float64}
-@test size(sample(prior, 10)) == (10,3)
+@test sample_θ(prior) isa Vector{Float64}
+@test sample_θ(prior, 10) isa Matrix{Float64}
+@test size(sample_θ(prior, 10)) == (10,3)

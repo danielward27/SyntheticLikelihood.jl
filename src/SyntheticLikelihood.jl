@@ -32,7 +32,7 @@ include("plotting.jl")
 export KitchenSink, regularize
 
 # Prior
-export Prior, sample
+export Prior, sample_θ
 
 # likelihood
 export synthetic_likelihood

@@ -97,17 +97,17 @@ end
 
 
 "Sample a parameter vector from the prior."
-function sample(prior::Prior)
+function sample_θ(prior::Prior)
     samp = [rand(d) for d in prior.v]
     vcat(samp...)
 end
 
 "Sample a matrix of parameter vectors from the prior"
-function sample(prior::Prior, n::Int64)
+function sample_θ(prior::Prior, n::Int64)
     nθ = sum
     samples = Matrix{Float64}(undef, n, prior.length)
     for i in 1:n
-        samples[i, :] = sample(prior)
+        samples[i, :] = sample_θ(prior)
     end
     samples
 end
