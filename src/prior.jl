@@ -7,11 +7,13 @@ struct Prior
     "A vector of distributions"
     v::Vector{<: Distribution}
     splits::Vector{Int}
+    length::Int
 
     Prior(v) = begin
         dims = [length(d) for d in v]
+        dim = sum(dims)
         splits = cumsum(dims)[1:(end-1)]
-        new(v, splits)
+        new(v, splits, dim)
     end
 end
 
@@ -80,15 +82,32 @@ end
 
 
 """
-Check if a proposed parameter vector falls within the prior support
+Check if a proposed parameter vector falls within the prior support.
 """
 function insupport(prior::Prior, θ::AbstractVector{Float64})
     split_θ = cut_at(θ, prior.splits)
     all([insupport(d, θᵢ)[1] for (d, θᵢ) in zip(prior.v, split_θ)])
 end
 
-
-"Covariance matrix (1 by 1) for univariate distribution"
+# TODO Type piracy, might be best to avoid below.
+"Covariance matrix (1 by 1) for univariate distribution."
 function cov(d::UnivariateDistribution)
     Diagonal([var(d)])
+end
+
+
+"Sample a parameter vector from the prior."
+function sample(prior::Prior)
+    samp = [rand(d) for d in prior.v]
+    vcat(samp...)
+end
+
+"Sample a matrix of parameter vectors from the prior"
+function sample(prior::Prior, n::Int64)
+    nθ = sum
+    samples = Matrix{Float64}(undef, n, prior.length)
+    for i in 1:n
+        samples[i, :] = sample(prior)
+    end
+    samples
 end

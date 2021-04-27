@@ -1,6 +1,6 @@
 using SyntheticLikelihood, Test, Distributions, ForwardDiff, LinearAlgebra
 using SyntheticLikelihood: cut_at, logpdf, log_prior_gradient,
-    log_prior_hessian, insupport
+    log_prior_hessian, insupport, sample
 
 v = [1,2,3,4]
 @test cut_at(v, [1,3]) == [[1], [2,3], [4]]
@@ -42,3 +42,9 @@ prior_uni = Prior([Uniform(-5,5), Uniform(-10,10)])
 prior_mv = Prior([MvLogNormal([1.,2.,3.])])
 @test insupport(prior_mv, [1e7, 1e6, 1e5]) === true
 @test insupport(prior_mv, [1e7, 1e6, -1e-10]) === false
+
+
+prior = Prior([MvNormal([1.,2.]), Normal()])
+@test sample(prior) isa Vector{Float64}
+@test sample(prior, 10) isa Matrix{Float64}
+@test size(sample(prior, 10)) == (10,3)
