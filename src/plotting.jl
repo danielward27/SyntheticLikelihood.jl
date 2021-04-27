@@ -4,10 +4,11 @@ available.
 $(SIGNATURES)
 """
 function plot_prior_posterior_density(
-    prior::Product,
+    prior::Prior,
     θ_samples::AbstractMatrix;
     param_names = reshape(["θ$(i)" for i in 1:10], 1,10),
     )
+
     plots = Vector()
     for i in 1:size(θ_samples, 2)
       p = plot(prior.v[i], xlabel = param_names[i])
@@ -23,7 +24,7 @@ end
 
 
 function plot_prior_posterior_density(
-    prior::Product,
+    prior::Prior,
     θ_samples::AbstractMatrix,
     θ_true;
     θ_names = reshape(["θ$(i)" for i in 1:10], 1,10),

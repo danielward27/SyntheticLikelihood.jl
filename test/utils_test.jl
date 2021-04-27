@@ -3,7 +3,7 @@ using SyntheticLikelihood, Test, Statistics,
 
 using SyntheticLikelihood: peturb, stack_arrays, remove_invariant, cov_to_cor,
     cor_to_cov, ObjectSummaryLogger, add_log!, get_pretty_table, standardize,
-    outlier_rows, rm_outliers
+    outlier_rows, rm_outliers, cut_at
 
 ## Test peturb
 true_mean = [1.,1000]

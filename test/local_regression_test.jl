@@ -30,6 +30,7 @@ X, combinations = quadratic_design_matrix(X)
 θᵢ = [2.0, 5]
 P = MvNormal(length(θᵢ), 2)
 θ = peturb(θᵢ, P; n = 100)
+
 s = simulate_n_s(θ; simulator, summary=identity)
 μ = quadratic_local_μ(;θᵢ, θ, s)
 
@@ -129,37 +130,20 @@ norm(diag(estimted_Σ.Σ) - diag(true_Σ.Σ))
 @test norm(estimted_Σ.∂ - true_Σ.∂) < norm(true_Σ.∂)
 
 
-## Test automatic differentiation of priors (for product and mv dists)
-sd = 2.
-prod_dist = Product([Normal(1,sd), Normal(2,sd), Normal(3,sd)])
-mv_dist = MvNormal([1,2,3], sd)
-
-θ = [1.,2,3]
-
-
-@test log_prior_gradient(prod_dist, θ) ≈ [0,0,0]
-@test log_prior_gradient(mv_dist, θ) ≈ [0,0,0]
-
-@test log_prior_hessian(mv_dist, θ) ≈ -Diagonal(fill(1/sd^2, 3))
-@test log_prior_hessian(prod_dist, θ) ≈ -Diagonal(fill(1/sd^2, 3))
-
-
 ## test posterior_ogh matches
-
 test_θ = rand(10)
-prior = MvNormal(rand(10), Diagonal(rand(10)))
+prior = Prior([MvNormal(rand(10), Diagonal(rand(10)))])
 likelihood = MvNormal(rand(10), Diagonal(rand(10)))
 
 # Use product of two normals to check calculation correct
 
 expected = begin
-    posterior = SyntheticLikelihood.analytic_mvn_posterior(prior, likelihood)
+    posterior = SyntheticLikelihood.analytic_mvn_posterior(prior.v[1], likelihood)
     obj = loglikelihood(posterior, test_θ)
     expected_∇ = gradlogpdf(posterior, test_θ)
     expected_H = ForwardDiff.hessian(θ -> loglikelihood(posterior, θ), test_θ)
     ObjGradHess(-obj, -expected_∇, -Symmetric(expected_H))
 end
-
 
 
 f(θ) = loglikelihood(likelihood, θ)
@@ -170,9 +154,7 @@ neg_likelihood_ogh = ObjGradHess(
 )
 
 
-actual = posterior_calc(
-    prior, neg_likelihood_ogh, test_θ
-    )
+actual = posterior_calc(prior, neg_likelihood_ogh, test_θ)
 
 @test actual.objective != expected.objective  # Proportional
 @test actual.gradient ≈ expected.gradient  # Independent of p(x)

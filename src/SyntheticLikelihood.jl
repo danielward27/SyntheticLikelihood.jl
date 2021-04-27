@@ -13,8 +13,10 @@ import Base.@kwdef
 using StatsBase
 using DelimitedFiles
 using ProgressMeter
+import Distributions: cov, insupport, logpdf
 
 include("matrix_regularizers.jl")
+include("prior.jl")
 include("local_approximation_structs.jl")
 include("quadratic_local_regression.jl")
 include("glm_local_regression.jl")
@@ -28,6 +30,9 @@ include("plotting.jl")
 
 # Matrix regularization
 export KitchenSink, regularize
+
+# Prior
+export Prior
 
 # likelihood
 export synthetic_likelihood
