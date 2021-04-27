@@ -1,6 +1,6 @@
 using SyntheticLikelihood, Test, Distributions, ForwardDiff, LinearAlgebra
 using SyntheticLikelihood: cut_at, logpdf, log_prior_gradient,
-    log_prior_hessian, insupport, sample
+    log_prior_hessian, insupport
 
 v = [1,2,3,4]
 @test cut_at(v, [1,3]) == [[1], [2,3], [4]]
