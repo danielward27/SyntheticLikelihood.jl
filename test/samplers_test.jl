@@ -35,3 +35,15 @@ data = run_sampler!(rula, local_posterior; init_θ, n_steps = 500)
 likelihood = MvNormal(θ_true, sqrt(0.1))
 expected = SyntheticLikelihood.analytic_mvn_posterior(prior.v[1], likelihood)
 @test isapprox(mean(expected), mean.(eachcol(θ)); atol = 2)
+
+
+# Test standard synthetic likelihood gives reasonable results
+basic_posterior = BasicPosterior(; simulator, s_true, prior)
+rwm = RWMetropolis(MvNormal(cov(expected)))
+
+data = run_sampler!(rwm, basic_posterior; init_θ,
+  n_steps = 4000, collect_data = [:θ, :accepted])
+
+θ = data.θ[data.accepted, :]
+
+@test isapprox(mean(expected), mean.(eachcol(θ)); atol = 2)
