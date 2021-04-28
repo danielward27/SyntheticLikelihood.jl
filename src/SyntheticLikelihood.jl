@@ -38,10 +38,10 @@ export Prior, sample_θ
 export synthetic_likelihood
 
 # Local approximation structs
-export LocalApproximation, LocalLikelihood, LocalPosterior
+export LocalApproximation, LocalLikelihood, LocalPosterior, BasicPosterior
 
 # Sampling
-export AbstractSampler, ULA, RiemannianULA, run_sampler!
+export AbstractSampler, ULA, RiemannianULA, RWMetropolis, run_sampler!
 
 # plotting
 export plot_prior_posterior_density

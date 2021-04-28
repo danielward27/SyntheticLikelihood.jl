@@ -1,5 +1,6 @@
 abstract type LocalApproximation end
 
+
 """
 Contains the hyperparameters for getting a local approximation
 of the negative log-likelihood surface using local regressions.
@@ -34,7 +35,7 @@ valid_params checks whether proposed points fall within the prior support.
 $(FIELDS)
 """
 Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
-    "Prior distribution (either multivariate or Product distribution)"
+    "Prior distribution."
     prior::Prior
     simulator::Function
     summary::Function=identity
@@ -42,5 +43,21 @@ Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
     P::AbstractMvNormal = MvNormal(0.3*cov(prior))
     n_sim::Integer = 1000
     P_regularizer::AbstractRegularizer = KitchenSink(ref = 0.3*cov(prior))
+    valid_params::Function = θ -> insupport(prior, θ)
+end
+
+
+
+"""
+Contains the hyperparameters for carrying out basic Bayesian synthetic
+    likelihood.
+"""
+Base.@kwdef mutable struct BasicPosterior <: LocalApproximation
+    "Prior distribution"
+    prior::Prior
+    simulator::Function
+    summary::Function=identity
+    s_true::Vector{Float64}
+    n_sim::Integer = 1000
     valid_params::Function = θ -> insupport(prior, θ)
 end

@@ -109,3 +109,19 @@ function obj_grad_hess(local_posterior::LocalPosterior, θ::Vector{Float64})
     neg_likelihood_ogh = likelihood_obj_grad_hess(local_posterior, θ)
     posterior_calc(local_posterior.prior, neg_likelihood_ogh, θ)
 end
+
+
+function obj_grad_hess(
+    basic_posterior::BasicPosterior,
+    θ::Vector{Float64})
+    @unpack simulator, summary, n_sim, s_true, prior = basic_posterior
+    s = simulate_n_s(θ; simulator, summary, n_sim)
+    s = rm_outliers(s)
+    s, s_true = remove_invariant(s, s_true)
+    Σ = cov(s)
+    μ = mean.(eachcol(s))
+    d = MvNormal(μ, Σ)
+    objective = logpdf(d, s_true) + logpdf(prior, θ)
+    ObjGradHess(; objective)
+end
+

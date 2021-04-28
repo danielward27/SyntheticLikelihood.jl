@@ -145,6 +145,67 @@ function run_sampler!(
 end
 
 
+"""
+Random walk metropolis algorithm. Uses the objective function
+(and not gradient/Hessian information).
+
+Note that this stores the θ values at each iteration, even if rejection occurs.
+To get only the accepted values, provide collect_data = [:θ, :accepted] to 
+`run_sampler!`, then filter the data, e.g. θ = data.θ[data.accepted, :].
+
+$(SIGNATURES)
+"""
+@kwdef struct RWMetropolis <: AbstractSampler
+    "The proposal distribution."
+    q::Sampleable
+end
+
+@kwdef mutable struct RWMetropolisState <: AbstractSamplerState
+    θ::AbstractVector{Float64}
+    objective::Float64
+    counter::Integer = 0
+    accepted::Bool = 0
+end
+
+function get_init_state(
+    sampler::RWMetropolis,
+    local_approximation::LocalApproximation,
+    init_θ::Vector{Float64}
+    )
+    ogh = obj_grad_hess(local_approximation, init_θ)
+    @unpack objective = ogh
+    RWMetropolisState(; θ=init_θ, objective)
+end
+
+function update!(
+    sampler::RWMetropolis,
+    local_approximation::LocalApproximation,
+    state::RWMetropolisState
+    )
+    @unpack q = sampler
+    @unpack θ, objective = state
+    @unpack valid_params = local_approximation
+
+    Δ = rand(q)
+    # TODO Resample until valid would be more appropriate here.
+    Δ = halve_update_until_valid(Δ, θ, valid_params)
+
+    θ′ = θ + Δ
+    obj′ = obj_grad_hess(local_approximation, θ′).objective
+
+    accept_probability = min(1, exp(obj′ - objective))
+
+    if accept_probability > rand()
+        state.objective = obj′
+        state.θ = θ′
+        state.accepted = true
+    else
+        state.accepted = false
+    end
+
+    state.counter += 1
+end
+
 
 """
 Halve update term until valid proposal found (e.g. with non-zero prior density).
