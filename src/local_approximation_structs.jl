@@ -40,9 +40,9 @@ Base.@kwdef mutable struct LocalPosterior <: LocalApproximation
     simulator::Function
     summary::Function=identity
     s_true::Vector{Float64}
-    P::AbstractMvNormal = MvNormal(0.3*cov(prior))
+    P::AbstractMvNormal = MvNormal(0.2*cov(prior))
     n_sim::Integer = 1000
-    P_regularizer::AbstractRegularizer = KitchenSink(ref = 0.3*cov(prior))
+    P_regularizer::AbstractRegularizer = KitchenSink(ref = 0.2*cov(prior))
     valid_params::Function = θ -> insupport(prior, θ)
 end
 

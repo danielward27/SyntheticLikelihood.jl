@@ -29,11 +29,12 @@ data = run_sampler!(rula, local_likelihood; init_θ, n_steps = 500)
 
 prior = Prior([MvNormal(fill(5,n), 0.5)])
 local_posterior = LocalPosterior(; simulator, s_true, prior)
-data = run_sampler!(rula, local_posterior; init_θ, n_steps = 500)
-θ = data[:θ][101:end, :] # Remove burn in
+data = run_sampler!(rula, local_posterior; init_θ, n_steps = 700)
+θ = data[:θ][301:end, :] # Remove burn in
 
 likelihood = MvNormal(θ_true, sqrt(0.1))
 expected = SyntheticLikelihood.analytic_mvn_posterior(prior.v[1], likelihood)
+
 @test isapprox(mean(expected), mean.(eachcol(θ)); atol = 2)
 
 
@@ -45,5 +46,6 @@ data = run_sampler!(rwm, basic_posterior; init_θ,
   n_steps = 4000, collect_data = [:θ, :accepted])
 
 θ = data.θ[data.accepted, :]
+θ = θ[100:end, :]
 
 @test isapprox(mean(expected), mean.(eachcol(θ)); atol = 2)
