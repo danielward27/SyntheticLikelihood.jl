@@ -123,6 +123,7 @@ function obj_grad_hess(
         s, s_true = remove_invariant(s, s_true)
     catch e
         if e isa NoVarError
+            @warn "None of the summary statistics had any variance."
             return ObjGradHess(; objective = -Inf)  # Force reject
         end
     end
