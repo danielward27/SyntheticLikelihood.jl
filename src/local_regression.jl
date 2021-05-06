@@ -112,7 +112,6 @@ end
 
 
 
-
 function obj_grad_hess(
     basic_posterior::BasicPosterior,
     θ::Vector{Float64})

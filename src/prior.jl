@@ -41,10 +41,6 @@ function logpdf(prior::Prior, θ::Vector{Float64})
     l
 end
 
-test = Normal()
-
-Normal() isa UnivariateDistribution
-
 
 "Automatic differentiation to get prior gradient."
 function log_prior_gradient(prior::Prior, θ::Vector{Float64})
@@ -88,6 +84,7 @@ function insupport(prior::Prior, θ::AbstractVector{Float64})
     split_θ = cut_at(θ, prior.splits)
     all([insupport(d, θᵢ)[1] for (d, θᵢ) in zip(prior.v, split_θ)])
 end
+
 
 # TODO Type piracy, might be best to avoid below.
 "Covariance matrix (1 by 1) for univariate distribution."
