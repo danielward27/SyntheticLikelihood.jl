@@ -89,7 +89,7 @@ function update!(
 
     H⁻¹ = state.hessian^-1
     H⁻¹ = regularize(H⁻¹, P_regularizer)
-    la.P = MvNormal(H⁻¹)
+    la.P = MvNormal(0.5*H⁻¹)
 
     z = randn(length(θ))
 
@@ -100,7 +100,7 @@ function update!(
     ogh = obj_grad_hess(la, state.θ)
     state.objective = ogh.objective
     state.gradient = ogh.gradient
-    state.hessian = ogh.hessian
+    state.hessian = 0.5*(state.hessian + ogh.hessian)  # average with last iteration
     state.counter += 1
 end
 
@@ -187,20 +187,23 @@ function update!(
     @unpack valid_params = local_approximation
 
     Δ = rand(q)
-    # TODO Resample until valid would be more appropriate here.
-    Δ = halve_update_until_valid(Δ, θ, valid_params)
 
     θ′ = θ + Δ
-    obj′ = obj_grad_hess(local_approximation, θ′).objective
 
-    accept_probability = min(1, exp(obj′ - objective))
-
-    if accept_probability > rand()
-        state.objective = obj′
-        state.θ = θ′
-        state.accepted = true
+    if !valid_params(θ′)
+        state.accepted = false # don't need to evaluate likelihood
     else
-        state.accepted = false
+        obj′ = obj_grad_hess(local_approximation, θ′).objective
+
+        accept_probability = min(1, exp(obj′ - objective))
+
+        if accept_probability > rand()
+            state.objective = obj′
+            state.θ = θ′
+            state.accepted = true
+        else
+            state.accepted = false
+        end
     end
 
     state.counter += 1
