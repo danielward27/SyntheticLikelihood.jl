@@ -86,21 +86,24 @@ function quadratic_local_μ(;
     θ = θ .- θᵢ'
     θ, combinations = quadratic_design_matrix(θ)
 
+    θqr = factorize(θ)
+
     for i in 1:nₛ
-       β, ŝ = linear_regression(θ, s[:, i])
+        β = θqr \ s[:, i]
+        ŝ = θ * β
 
-       # Convert β to matrix
-       β_mat = Matrix{Float64}(undef, length(θᵢ) + 1, length(θᵢ) + 1)
+        # Convert β to matrix
+        β_mat = Matrix{Float64}(undef, length(θᵢ) + 1, length(θᵢ) + 1)
 
-       for (i, idxs) in enumerate(combinations)
+        for (i, idxs) in enumerate(combinations)
            β_mat[idxs...] = β[i]  # Upper traingular
-       end
+        end
 
-       β_mat = Symmetric(β_mat)
-       μ[i] = β_mat[1,1]
-       ∂[i, :] = β_mat[2:end, 1]
-       ∂²[i, :, :] = β_mat[2:end, 2:end]
-       ϵ[:, i] = ŝ-s[:, i]
+        β_mat = Symmetric(β_mat)
+        μ[i] = β_mat[1,1]
+        ∂[i, :] = β_mat[2:end, 1]
+        ∂²[i, :, :] = β_mat[2:end, 2:end]
+        ϵ[:, i] = ŝ-s[:, i]
     end
     Localμ(μ, ∂, ∂², ϵ)
 end
