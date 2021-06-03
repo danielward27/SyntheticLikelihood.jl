@@ -1,6 +1,5 @@
 module SyntheticLikelihood
 
-using StatsPlots
 using Distributions
 using DocStringExtensions
 using LinearAlgebra
@@ -25,8 +24,6 @@ include("samplers.jl")
 include("utils.jl")
 include("data_collector.jl")
 include("simulate_n_s.jl")
-include("plotting.jl")
-
 
 # Matrix regularization
 export KitchenSink, regularize
