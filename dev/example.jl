@@ -38,7 +38,7 @@ prior = Prior([MvNormal(fill(2., 3))])
 
 # ### `LocalPosterior`
 # We can then define the hyperparameters associated with using local regressions
-# to estmate the log-likelihood (and subsequently log-posteior) gradient and Hessian.
+# to estmate the log-likelihood (and subsequently log-posterior) gradient and Hessian.
 # Here we will use 1000 simulations at each sampler step.
 local_posterior = LocalPosterior(;
   simulator,
@@ -59,4 +59,8 @@ results = run_sampler!(rula, local_posterior; init_θ, n_steps, progress = false
 
 # ### Plotting the results
 # We can plot a corner plot to visualise the posterior using StatsPlots
-cornerplot(results.θ[200:end, :], label = ["θ$i" for i in 1:3], markercolor = :plasma)
+cornerplot(
+  results.θ[200:end, :],
+  label = ["θ$i" for i in 1:3],
+  markercolor = :plasma
+  )
