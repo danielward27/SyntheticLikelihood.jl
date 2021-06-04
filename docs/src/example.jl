@@ -20,9 +20,6 @@ function simulator(θ)
   rand(d)
 end
 
-sds = fill(√0.1, 3)
-MvNormal(fill(0,3), sds)
-
 # ### Ground truth
 # As this is a toy example, we will generate ground truth parameters, alongside a
 # "pseudo-observed" simulated dataset.
@@ -35,6 +32,7 @@ nothing #hide
 # distributions. Here we use a multivariate normal prior.
 # The distributions should be from [`Distributions.jl`](https://juliastats.org/Distributions.jl/stable/).
 prior = Prior([MvNormal(fill(2., 3))])
+nothing #hide
 
 # ### `LocalPosterior`
 # We can then define the hyperparameters associated with using local regressions
@@ -56,6 +54,7 @@ rula = RiemannianULA(0.5)
 init_θ = fill(0., 3)
 n_steps = 1000
 results = run_sampler!(rula, local_posterior; init_θ, n_steps, progress = false)
+nothing #hide
 
 # ### Plotting the results
 # We can plot a corner plot to visualise the posterior using StatsPlots

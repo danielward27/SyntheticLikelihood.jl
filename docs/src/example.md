@@ -28,9 +28,6 @@ function simulator(θ)
   d = MvNormal(θ, sds)
   rand(d)
 end
-
-sds = fill(√0.1, 3)
-MvNormal(fill(0,3), sds)
 ```
 
 ### Ground truth
@@ -50,6 +47,7 @@ The distributions should be from [`Distributions.jl`](https://juliastats.org/Dis
 
 ```@example example
 prior = Prior([MvNormal(fill(2., 3))])
+nothing #hide
 ```
 
 ### `LocalPosterior`
@@ -77,6 +75,7 @@ rula = RiemannianULA(0.5)
 init_θ = fill(0., 3)
 n_steps = 1000
 results = run_sampler!(rula, local_posterior; init_θ, n_steps, progress = false)
+nothing #hide
 ```
 
 ### Plotting the results
