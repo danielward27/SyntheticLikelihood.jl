@@ -32,7 +32,6 @@ nothing #hide
 # distributions. Here we use a multivariate normal prior.
 # The distributions should be from [`Distributions.jl`](https://juliastats.org/Distributions.jl/stable/).
 prior = Prior([MvNormal(fill(2., 3))])
-nothing #hide
 
 # ### `LocalPosterior`
 # We can then define the hyperparameters associated with using local regressions
@@ -58,8 +57,8 @@ nothing #hide
 
 # ### Plotting the results
 # We can plot a corner plot to visualise the posterior using StatsPlots
-cornerplot(
+corrplot(
   results.θ[200:end, :],
-  label = ["θ$i" for i in 1:3],
+  labels = ["θ$i" for i=1:3],
   markercolor = :plasma
   )
